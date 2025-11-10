@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { tasksRouter } from "./endpoints/tasks/router";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
+import { nwmRouter } from "./endpoints/nwm/router";
 
 // Start a Hono app
 const app = new Hono<{ Bindings: Env }>();
@@ -33,15 +34,19 @@ const openapi = fromHono(app, {
   docs_url: "/",
   schema: {
     info: {
-      title: "My Awesome API",
-      version: "2.0.0",
-      description: "This is the documentation for my awesome API.",
+      title: "NWM Creative Works Experience API",
+      version: "1.0.0",
+      description:
+        "Structured content that powers the NWM Creative Works portfolio and capabilities overview.",
     },
   },
 });
 
 // Register Tasks Sub router
 openapi.route("/tasks", tasksRouter);
+
+// Register NWM Creative Works router
+openapi.route("/nwm", nwmRouter);
 
 // Register other endpoints
 openapi.post("/dummy/:slug", DummyEndpoint);
