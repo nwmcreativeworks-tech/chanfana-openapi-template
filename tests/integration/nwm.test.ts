@@ -58,4 +58,27 @@ describe("NWM Creative Works Experience API", () => {
       }
     });
   });
+
+  describe("GET /nwm/preview", () => {
+    it("stitches together hero-ready preview content", async () => {
+      const response = await SELF.fetch("http://local.test/nwm/preview");
+      const body = await response.json<{
+        success: boolean;
+        preview: {
+          name: string;
+          tagline: string;
+          specialties: string[];
+          featuredServices: { id: string; name: string; description: string }[];
+          highlightProject: { slug: string; client: string; summary: string };
+        };
+      }>();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.preview.name).toMatch(/NWM Creative Works/i);
+      expect(body.preview.featuredServices.length).toBeGreaterThan(0);
+      expect(body.preview.highlightProject.slug.length).toBeGreaterThan(0);
+      expect(body.preview.specialties.length).toBeLessThanOrEqual(3);
+    });
+  });
 });
