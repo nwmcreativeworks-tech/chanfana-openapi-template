@@ -101,7 +101,7 @@ app.get("/chatbot", (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tenant Support Chatbot</title>
+    <title>Hospital Church Tenant Portal – Powered by NWM Creative Works</title>
     <style>
         * {
             margin: 0;
@@ -110,76 +110,223 @@ app.get("/chatbot", (c) => {
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #8b5cf6 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #F4F5F7;
+            background-image: radial-gradient(circle at 20% 20%, rgba(0, 82, 204, 0.04) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, rgba(0, 184, 217, 0.04) 0%, transparent 50%);
+            min-height: 100vh;
+            padding: 24px 16px;
+            color: #0B1F2A;
         }
 
-        .chat-container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            max-height: 800px;
+        /* Main Portal Container */
+        .portal-container {
+            max-width: 960px;
+            margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(11, 31, 42, 0.08), 0 2px 8px rgba(11, 31, 42, 0.04);
             overflow: hidden;
         }
 
-        .chat-header {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        /* Header */
+        .portal-header {
+            background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
+            padding: 32px 32px 24px;
             color: white;
-            padding: 25px 20px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+            position: relative;
         }
 
-        .chat-header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .chat-header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .tenant-info {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e0e0e0;
+        .header-logo {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
-        .tenant-info input {
-            flex: 1;
-            min-width: 150px;
-            padding: 10px;
-            border: 1px solid #ddd;
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .portal-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .portal-header p {
+            font-size: 15px;
+            opacity: 0.9;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* User Info Inputs */
+        .user-info-section {
+            padding: 24px 32px;
+            background: #FAFBFC;
+            border-bottom: 1px solid #E1E4E8;
+        }
+
+        .user-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #586069;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .input-group input {
+            padding: 12px 16px;
+            border: 2px solid #E1E4E8;
             border-radius: 8px;
+            font-size: 15px;
+            color: #0B1F2A;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #0052CC;
+            box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+        }
+
+        /* Main Content */
+        .portal-main {
+            padding: 32px;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .welcome-section h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0B1F2A;
+            margin-bottom: 8px;
+        }
+
+        .welcome-section p {
+            font-size: 15px;
+            color: #586069;
+            line-height: 1.6;
+        }
+
+        /* Quick Action Cards */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            background: #FAFBFC;
+            border: 2px solid #E1E4E8;
+            border-radius: 12px;
+            padding: 20px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .action-card:hover {
+            border-color: #0052CC;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 82, 204, 0.12);
+        }
+
+        .action-card:focus {
+            outline: 3px solid rgba(0, 82, 204, 0.3);
+            outline-offset: 2px;
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            background: linear-gradient(135deg, #0052CC 0%, #00B8D9 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .action-card:nth-child(2) .action-icon {
+            background: linear-gradient(135deg, #FFAB00 0%, #FF8B00 100%);
+        }
+
+        .action-card:nth-child(3) .action-icon {
+            background: linear-gradient(135deg, #00B8D9 0%, #00A3BF 100%);
+        }
+
+        .action-card:nth-child(4) .action-icon {
+            background: linear-gradient(135deg, #6554C0 0%, #5243AA 100%);
+        }
+
+        .action-content h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0B1F2A;
+            margin-bottom: 4px;
+        }
+
+        .action-content p {
             font-size: 14px;
+            color: #586069;
+            line-height: 1.5;
+        }
+
+        /* Chat Area */
+        .chat-section {
+            background: #F4F5F7;
+            border-radius: 12px;
+            padding: 24px;
+            min-height: 320px;
+            max-height: 480px;
+            overflow-y: auto;
+            margin-bottom: 16px;
         }
 
         .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .message {
-            margin-bottom: 20px;
             display: flex;
-            gap: 10px;
-            animation: fadeIn 0.3s ease-in;
+            gap: 12px;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease-out;
         }
 
         @keyframes fadeIn {
@@ -194,129 +341,95 @@ app.get("/chatbot", (c) => {
         }
 
         .message.user {
+            align-self: flex-end;
             flex-direction: row-reverse;
         }
 
         .message-avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .message.user .message-avatar {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            box-shadow: 0 4px 8px rgba(6, 182, 212, 0.3);
+            font-size: 16px;
+            background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
+            color: white;
         }
 
         .message.assistant .message-avatar {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+            background: linear-gradient(135deg, #00B8D9 0%, #00A3BF 100%);
         }
 
         .message-content {
-            max-width: 70%;
+            background: white;
             padding: 12px 16px;
             border-radius: 12px;
-            line-height: 1.5;
             font-size: 15px;
+            line-height: 1.5;
+            color: #0B1F2A;
+            box-shadow: 0 2px 8px rgba(11, 31, 42, 0.06);
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            background: #0052CC;
             color: white;
-            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);
         }
 
-        .message.assistant .message-content {
-            background: white;
-            color: #333;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .suggestions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-            padding-left: 50px;
-        }
-
-        .suggestion-btn {
-            padding: 8px 16px;
-            background: white;
-            border: 2px solid #0ea5e9;
-            color: #0ea5e9;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
-
-        .suggestion-btn:hover {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
-        }
-
-        .action-taken {
-            margin-top: 10px;
-            padding: 10px;
-            background: #d4edda;
-            border-left: 4px solid #28a745;
-            border-radius: 4px;
-            font-size: 13px;
-            color: #155724;
-        }
-
-        .chat-input-container {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
+        /* Chat Input */
+        .chat-input-area {
+            background: #F4F5F7;
+            padding: 16px;
+            border-radius: 12px;
         }
 
         .chat-input-form {
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            align-items: flex-end;
         }
 
         .chat-input {
             flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
+            padding: 14px 18px;
+            border: 2px solid #E1E4E8;
+            border-radius: 24px;
             font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
+            font-family: inherit;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+            background: white;
+            transition: all 0.2s;
         }
 
         .chat-input:focus {
-            border-color: #0ea5e9;
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            outline: none;
+            border-color: #0052CC;
+            box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
         }
 
         .send-btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
             color: white;
             border: none;
-            border-radius: 25px;
-            cursor: pointer;
+            border-radius: 24px;
             font-size: 15px;
             font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
         }
 
         .send-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 82, 204, 0.3);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
         }
 
         .send-btn:disabled {
@@ -324,26 +437,88 @@ app.get("/chatbot", (c) => {
             cursor: not-allowed;
         }
 
+        /* Footer */
+        .portal-footer {
+            padding: 20px 32px;
+            background: #FAFBFC;
+            border-top: 1px solid #E1E4E8;
+            text-align: center;
+        }
+
+        .portal-footer p {
+            font-size: 13px;
+            color: #586069;
+        }
+
+        .portal-footer a {
+            color: #0052CC;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .portal-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            body {
+                padding: 16px 12px;
+            }
+
+            .portal-container {
+                border-radius: 16px;
+            }
+
+            .portal-header {
+                padding: 24px 20px 20px;
+            }
+
+            .portal-header h1 {
+                font-size: 22px;
+            }
+
+            .user-info-section {
+                padding: 20px;
+            }
+
+            .portal-main {
+                padding: 24px 20px;
+            }
+
+            .action-card {
+                padding: 16px 18px;
+            }
+
+            .chat-input-form {
+                flex-direction: column;
+            }
+
+            .send-btn {
+                width: 100%;
+            }
+        }
+
+        /* Typing Indicator */
         .typing-indicator {
             display: none;
             padding: 12px 16px;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             width: fit-content;
+            box-shadow: 0 2px 8px rgba(11, 31, 42, 0.06);
         }
 
         .typing-indicator.active {
-            display: block;
+            display: flex;
+            gap: 4px;
         }
 
         .typing-indicator span {
-            display: inline-block;
             width: 8px;
             height: 8px;
-            background: #999;
+            background: #586069;
             border-radius: 50%;
-            margin: 0 2px;
             animation: typing 1.4s infinite;
         }
 
@@ -358,83 +533,127 @@ app.get("/chatbot", (c) => {
         @keyframes typing {
             0%, 60%, 100% {
                 transform: translateY(0);
+                opacity: 0.7;
             }
             30% {
-                transform: translateY(-10px);
+                transform: translateY(-8px);
+                opacity: 1;
             }
-        }
-
-        .welcome-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-
-        .welcome-message h2 {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 15px;
-            font-weight: 700;
-        }
-
-        .welcome-message ul {
-            list-style: none;
-            margin-top: 20px;
-        }
-
-        .welcome-message li {
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>🏢 Tenant Support Chatbot</h1>
-            <p>AI-powered support for thermostat, maintenance, and vMix help</p>
-        </div>
-
-        <div class="tenant-info">
-            <input type="text" id="tenantName" placeholder="Your Name (optional)">
-            <input type="text" id="unitNumber" placeholder="Unit Number (optional)">
-        </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <div class="welcome-message">
-                <h2>👋 Welcome!</h2>
-                <p>I'm your AI tenant support assistant. I can help you with:</p>
-                <ul>
-                    <li>🌡️ <strong>Thermostat Control</strong> - Adjust your temperature</li>
-                    <li>🔧 <strong>Maintenance Requests</strong> - Report and track issues</li>
-                    <li>🎥 <strong>vMix Troubleshooting</strong> - Step-by-step tech support</li>
-                    <li>🏢 <strong>Building Info</strong> - Policies and amenities</li>
-                </ul>
-                <p style="margin-top: 20px;">What can I help you with today?</p>
+    <div class="portal-container">
+        <!-- Header -->
+        <header class="portal-header">
+            <div class="header-logo">
+                <div class="logo-icon">⛪</div>
+                <div>
+                    <h1>Hospital Church Tenant Portal</h1>
+                    <p style="font-size: 13px; opacity: 0.8; margin-top: 4px;">Powered by NWM Creative Works</p>
+                </div>
             </div>
-        </div>
+            <p>AI-powered support for adjusting thermostats in select rooms, submitting maintenance requests, and getting help from the HC Media Ministry troubleshoot assistant.</p>
+        </header>
 
-        <div class="chat-input-container">
-            <form class="chat-input-form" id="chatForm">
-                <input type="text" class="chat-input" id="messageInput" placeholder="Type your message..." autocomplete="off">
-                <button type="submit" class="send-btn" id="sendBtn">Send</button>
-            </form>
-        </div>
+        <!-- User Info Section -->
+        <section class="user-info-section">
+            <div class="user-info-grid">
+                <div class="input-group">
+                    <label for="tenantName">Your Name</label>
+                    <input type="text" id="tenantName" placeholder="Enter your name (optional)">
+                </div>
+                <div class="input-group">
+                    <label for="unitNumber">Unit Number</label>
+                    <input type="text" id="unitNumber" placeholder="Enter unit number (optional)">
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="portal-main">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <h2>How can we help your unit today?</h2>
+                <p>Select a service below or start a conversation in the chat.</p>
+            </section>
+
+            <!-- Quick Action Cards -->
+            <div class="quick-actions">
+                <div class="action-card" tabindex="0" role="button" onclick="startAction('thermostat')">
+                    <div class="action-icon">🌡️</div>
+                    <div class="action-content">
+                        <h3>Thermostat Control</h3>
+                        <p>Adjust your temperature in supported rooms</p>
+                    </div>
+                </div>
+
+                <div class="action-card" tabindex="0" role="button" onclick="startAction('maintenance')">
+                    <div class="action-icon">🔧</div>
+                    <div class="action-content">
+                        <h3>Maintenance Requests</h3>
+                        <p>Report and track issues in your unit</p>
+                    </div>
+                </div>
+
+                <div class="action-card" tabindex="0" role="button" onclick="startAction('media')">
+                    <div class="action-icon">🎥</div>
+                    <div class="action-content">
+                        <h3>HC Media Troubleshooting</h3>
+                        <p>Get step-by-step help for media/vMix issues</p>
+                    </div>
+                </div>
+
+                <div class="action-card" tabindex="0" role="button" onclick="startAction('info')">
+                    <div class="action-icon">ℹ️</div>
+                    <div class="action-content">
+                        <h3>Building Info</h3>
+                        <p>View key policies, amenities, and contacts</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <section class="chat-section" id="chatMessages">
+                <div class="chat-messages" id="messageContainer">
+                    <!-- Messages will appear here -->
+                </div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <span></span><span></span><span></span>
+                </div>
+            </section>
+
+            <!-- Chat Input -->
+            <div class="chat-input-area">
+                <form class="chat-input-form" id="chatForm">
+                    <input
+                        type="text"
+                        class="chat-input"
+                        id="messageInput"
+                        placeholder="Type your message..."
+                        autocomplete="off"
+                        required
+                    >
+                    <button type="submit" class="send-btn" id="sendBtn">Send</button>
+                </form>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="portal-footer">
+            <p>&copy; 2025 Hospital Church of Jacksonville | <a href="#" onclick="showPrivacy()">Privacy Policy</a> | Powered by <strong>NWM Creative Works</strong></p>
+        </footer>
     </div>
 
     <script>
         let sessionId = null;
-        const chatMessages = document.getElementById('chatMessages');
+        const chatMessages = document.getElementById('messageContainer');
         const messageInput = document.getElementById('messageInput');
         const chatForm = document.getElementById('chatForm');
         const sendBtn = document.getElementById('sendBtn');
         const tenantName = document.getElementById('tenantName');
         const unitNumber = document.getElementById('unitNumber');
+        const typingIndicator = document.getElementById('typingIndicator');
 
         // Load session from localStorage
         if (localStorage.getItem('sessionId')) {
@@ -459,16 +678,27 @@ app.get("/chatbot", (c) => {
             unitNumber.value = localStorage.getItem('unitNumber');
         }
 
+        // Quick action handlers
+        function startAction(action) {
+            const messages = {
+                thermostat: "I need help with the thermostat",
+                maintenance: "I need to submit a maintenance request",
+                media: "I need help with vMix or media equipment",
+                info: "I need information about the building"
+            };
+            messageInput.value = messages[action];
+            messageInput.focus();
+        }
+
+        function showPrivacy() {
+            alert('Privacy Policy would be shown here');
+        }
+
+        // Handle form submission
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = messageInput.value.trim();
             if (!message) return;
-
-            // Clear welcome message if present
-            const welcomeMsg = chatMessages.querySelector('.welcome-message');
-            if (welcomeMsg) {
-                welcomeMsg.remove();
-            }
 
             // Add user message
             addMessage('user', message);
@@ -476,16 +706,8 @@ app.get("/chatbot", (c) => {
             sendBtn.disabled = true;
 
             // Show typing indicator
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'message assistant';
-            typingIndicator.innerHTML = \`
-                <div class="message-avatar">🤖</div>
-                <div class="typing-indicator active">
-                    <span></span><span></span><span></span>
-                </div>
-            \`;
-            chatMessages.appendChild(typingIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            typingIndicator.classList.add('active');
+            chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
 
             try {
                 const response = await fetch('/chat', {
@@ -510,14 +732,14 @@ app.get("/chatbot", (c) => {
                 }
 
                 // Remove typing indicator
-                typingIndicator.remove();
+                typingIndicator.classList.remove('active');
 
                 // Add assistant message
                 addMessage('assistant', data.message, data.suggestions, data.action_taken);
 
             } catch (error) {
                 console.error('Error:', error);
-                typingIndicator.remove();
+                typingIndicator.classList.remove('active');
                 addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
             }
 
@@ -530,41 +752,13 @@ app.get("/chatbot", (c) => {
             messageDiv.className = \`message \${role}\`;
 
             const avatar = role === 'user' ? '👤' : '🤖';
-            let html = \`
+            messageDiv.innerHTML = \`
                 <div class="message-avatar">\${avatar}</div>
-                <div class="message-content">\${content.replace(/\\n/g, '<br>')}</div>
+                <div class="message-content">\${content.replace(/\n/g, '<br>')}</div>
             \`;
 
-            messageDiv.innerHTML = html;
             chatMessages.appendChild(messageDiv);
-
-            // Add action taken badge
-            if (actionTaken && actionTaken.type) {
-                const actionDiv = document.createElement('div');
-                actionDiv.className = 'action-taken';
-                actionDiv.style.marginLeft = '50px';
-                actionDiv.innerHTML = \`<strong>Action:</strong> \${actionTaken.type.replace(/_/g, ' ')}\`;
-                chatMessages.appendChild(actionDiv);
-            }
-
-            // Add suggestions
-            if (suggestions && suggestions.length > 0) {
-                const suggestionsDiv = document.createElement('div');
-                suggestionsDiv.className = 'suggestions';
-                suggestions.forEach(suggestion => {
-                    const btn = document.createElement('button');
-                    btn.className = 'suggestion-btn';
-                    btn.textContent = suggestion;
-                    btn.onclick = () => {
-                        messageInput.value = suggestion;
-                        messageInput.focus();
-                    };
-                    suggestionsDiv.appendChild(btn);
-                });
-                chatMessages.appendChild(suggestionsDiv);
-            }
-
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
         }
 
         async function loadChatHistory() {
@@ -575,15 +769,11 @@ app.get("/chatbot", (c) => {
                 const data = await response.json();
 
                 if (data.messages && data.messages.length > 0) {
-                    // Clear welcome message
                     chatMessages.innerHTML = '';
-
-                    // Load messages
                     data.messages.forEach(msg => {
                         addMessage(msg.role, msg.content);
                     });
 
-                    // Update tenant info if available
                     if (data.tenant_info) {
                         if (data.tenant_info.tenant_name) {
                             tenantName.value = data.tenant_info.tenant_name;
@@ -598,7 +788,7 @@ app.get("/chatbot", (c) => {
             }
         }
 
-        // Allow Enter to send, Shift+Enter for newline
+        // Allow Enter to send
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -608,8 +798,6 @@ app.get("/chatbot", (c) => {
     </script>
 </body>
 </html>`;
-
-	return c.html(html);
 });
 
 // Export the Hono app
