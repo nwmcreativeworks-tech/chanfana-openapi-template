@@ -1,7 +1,7 @@
 {
   "compatibility_date": "2025-10-08",
   "main": "src/index.ts",
-  "name": "chanfana-openapi-template",
+  "name": "tenant-support-chatbot",
   "upload_source_maps": true,
   "observability": {
     "enabled": true
@@ -12,5 +12,8 @@
       "database_name": "openapi-template-db",
       "database_id": "e1395744-bc83-4176-b0d8-e76891336f67"
     }
-  ]
+  ],
+  "ai": {
+    "binding": "AI"
+  }
 }
