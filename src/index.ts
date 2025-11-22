@@ -94,8 +94,308 @@ app.post("/alexa/token", async (c) => {
 	return alexaOAuth.token(c);
 });
 
-// Serve chat interface
-app.get("/chatbot", (c) => {
+// Login page
+app.get("/login", (c) => {
+	const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Login - Hospital Church Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #F4F5F7;
+            background-image: radial-gradient(circle at 20% 20%, rgba(0, 82, 204, 0.04) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, rgba(0, 184, 217, 0.04) 0%, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(11, 31, 42, 0.08), 0 2px 8px rgba(11, 31, 42, 0.04);
+            overflow: hidden;
+            max-width: 480px;
+            width: 100%;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
+            padding: 48px 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .login-body {
+            padding: 40px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .welcome-text h2 {
+            font-size: 20px;
+            color: #0B1F2A;
+            margin-bottom: 8px;
+        }
+
+        .welcome-text p {
+            font-size: 14px;
+            color: #586069;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0B1F2A;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E1E4E8;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #0052CC;
+            box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+        }
+
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 82, 204, 0.3);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #FEE;
+            border: 2px solid #FCC;
+            color: #C33;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .login-footer {
+            padding: 24px 40px;
+            background: #FAFBFC;
+            border-top: 1px solid #E1E4E8;
+            text-align: center;
+        }
+
+        .login-footer p {
+            font-size: 13px;
+            color: #586069;
+        }
+
+        .login-footer a {
+            color: #0052CC;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 640px) {
+            .login-body {
+                padding: 32px 24px;
+            }
+
+            .login-header {
+                padding: 40px 24px;
+            }
+
+            .login-footer {
+                padding: 20px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo-icon">⛪</div>
+            <h1>Hospital Church</h1>
+            <p>Tenant Portal</p>
+        </div>
+
+        <div class="login-body">
+            <div class="welcome-text">
+                <h2>Welcome Back!</h2>
+                <p>Sign in to access your portal</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    Sign In
+                </button>
+            </form>
+        </div>
+
+        <div class="login-footer">
+            <p>&copy; 2025 Hospital Church of Jacksonville | Powered by <strong>NWM Creative Works</strong></p>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+            errorMessage.classList.remove('show');
+
+            try {
+                const response = await fetch('/auth/tenant/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Store session token
+                    localStorage.setItem('sessionToken', data.session_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    // Redirect to chatbot
+                    window.location.href = '/chatbot';
+                } else {
+                    errorMessage.textContent = data.error || 'Login failed. Please try again.';
+                    errorMessage.classList.add('show');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = 'Connection error. Please try again.';
+                errorMessage.classList.add('show');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        });
+    </script>
+</body>
+</html>`;
+	return c.html(html);
+});
+
+// Serve chat interface (protected by authentication)
+app.get("/chatbot", async (c) => {
+	// Check if request has session token in header or query param
+	const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') ||
+	                     c.req.query('session_token');
+
+	// For web browsers, check if user is authenticated
+	// We'll add a script that verifies the session exists in localStorage
+	// If not, redirect to login
 	const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -646,6 +946,36 @@ app.get("/chatbot", (c) => {
     </div>
 
     <script>
+        // Authentication check - redirect to login if not authenticated
+        (async function checkAuth() {
+            const sessionToken = localStorage.getItem('sessionToken');
+            if (!sessionToken) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Verify session is still valid
+            try {
+                const response = await fetch('/auth/tenant/verify', {
+                    headers: {
+                        'Authorization': \`Bearer \${sessionToken}\`
+                    }
+                });
+
+                if (!response.ok) {
+                    // Session expired or invalid
+                    localStorage.removeItem('sessionToken');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                    return;
+                }
+            } catch (error) {
+                console.error('Auth verification error:', error);
+                window.location.href = '/login';
+                return;
+            }
+        })();
+
         let sessionId = null;
         const chatMessages = document.getElementById('messageContainer');
         const messageInput = document.getElementById('messageInput');
@@ -654,6 +984,15 @@ app.get("/chatbot", (c) => {
         const tenantName = document.getElementById('tenantName');
         const unitNumber = document.getElementById('unitNumber');
         const typingIndicator = document.getElementById('typingIndicator');
+
+        // Load user info from session
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.full_name) {
+            tenantName.value = user.full_name;
+        }
+        if (user.unit_number) {
+            unitNumber.value = user.unit_number;
+        }
 
         // Load session from localStorage
         if (localStorage.getItem('sessionId')) {

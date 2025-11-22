@@ -3,27 +3,51 @@ import { Context } from "hono";
 export class AdminDashboard {
 	async handle(c: Context) {
 		const html = `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Admin Dashboard - Tenant Support System</title>
+	<meta charset="UTF-8">
+	<title>Admin Dashboard - Hospital Church Portal</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style>
 		* { margin: 0; padding: 0; box-sizing: border-box; }
 		body {
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-			background: #f5f7fa;
+			font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			background: #F4F5F7;
+			background-image: radial-gradient(circle at 20% 20%, rgba(0, 82, 204, 0.04) 0%, transparent 50%),
+			                  radial-gradient(circle at 80% 80%, rgba(0, 184, 217, 0.04) 0%, transparent 50%);
+			min-height: 100vh;
 		}
 		.header {
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
 			color: white;
-			padding: 20px;
-			box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+			padding: 32px 24px;
+			box-shadow: 0 8px 32px rgba(11, 31, 42, 0.08);
 		}
-		.header h1 {
-			font-size: 24px;
-			margin-bottom: 5px;
+		.header-content {
+			max-width: 1400px;
+			margin: 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 16px;
 		}
-		.header p {
+		.logo-icon {
+			width: 56px;
+			height: 56px;
+			background: rgba(255, 255, 255, 0.15);
+			border-radius: 14px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 28px;
+			backdrop-filter: blur(10px);
+		}
+		.header-text h1 {
+			font-size: 28px;
+			font-weight: 700;
+			margin-bottom: 4px;
+			letter-spacing: -0.5px;
+		}
+		.header-text p {
 			opacity: 0.9;
 			font-size: 14px;
 		}
@@ -40,93 +64,124 @@ export class AdminDashboard {
 		}
 		.card {
 			background: white;
-			border-radius: 12px;
-			padding: 24px;
-			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+			border-radius: 16px;
+			padding: 28px;
+			box-shadow: 0 8px 32px rgba(11, 31, 42, 0.08), 0 2px 8px rgba(11, 31, 42, 0.04);
+			transition: all 0.2s;
+		}
+		.card:hover {
+			box-shadow: 0 12px 40px rgba(11, 31, 42, 0.12), 0 4px 12px rgba(11, 31, 42, 0.06);
 		}
 		.card h2 {
 			font-size: 18px;
-			color: #333;
-			margin-bottom: 16px;
+			color: #0B1F2A;
+			font-weight: 700;
+			margin-bottom: 20px;
 			display: flex;
 			align-items: center;
 			gap: 10px;
 		}
 		.stat {
-			font-size: 36px;
-			font-weight: bold;
-			color: #667eea;
+			font-size: 40px;
+			font-weight: 700;
+			color: #0052CC;
 			margin-bottom: 8px;
+			letter-spacing: -1px;
 		}
 		.stat-label {
-			color: #666;
+			color: #586069;
 			font-size: 14px;
+			font-weight: 500;
 		}
 		table {
 			width: 100%;
 			border-collapse: collapse;
 		}
 		th {
-			background: #f8f9fa;
-			padding: 12px;
+			background: #FAFBFC;
+			padding: 14px 16px;
 			text-align: left;
 			font-weight: 600;
-			color: #333;
-			border-bottom: 2px solid #e1e8ed;
+			font-size: 13px;
+			color: #0B1F2A;
+			border-bottom: 2px solid #E1E4E8;
+			text-transform: uppercase;
+			letter-spacing: 0.3px;
 		}
 		td {
-			padding: 12px;
-			border-bottom: 1px solid #e1e8ed;
+			padding: 14px 16px;
+			border-bottom: 1px solid #E1E4E8;
+			font-size: 14px;
+			color: #0B1F2A;
+		}
+		tr:hover {
+			background: #FAFBFC;
 		}
 		.badge {
 			display: inline-block;
-			padding: 4px 12px;
-			border-radius: 12px;
+			padding: 6px 14px;
+			border-radius: 16px;
 			font-size: 12px;
 			font-weight: 600;
+			letter-spacing: 0.2px;
 		}
-		.badge-admin { background: #667eea; color: white; }
-		.badge-tenant { background: #48bb78; color: white; }
-		.badge-maintenance { background: #ed8936; color: white; }
-		.badge-active { background: #48bb78; color: white; }
-		.badge-inactive { background: #cbd5e0; color: #718096; }
+		.badge-admin { background: #0052CC; color: white; }
+		.badge-tenant { background: #00B8D9; color: white; }
+		.badge-maintenance { background: #FFAB00; color: #0B1F2A; }
+		.badge-active { background: #36B37E; color: white; }
+		.badge-inactive { background: #DFE1E6; color: #586069; }
 		.btn {
-			padding: 8px 16px;
+			padding: 10px 18px;
 			border: none;
-			border-radius: 6px;
+			border-radius: 8px;
 			cursor: pointer;
 			font-size: 14px;
 			font-weight: 600;
 			margin-right: 8px;
+			transition: all 0.2s;
 		}
 		.btn-primary {
-			background: #667eea;
+			background: linear-gradient(135deg, #0052CC 0%, #0065FF 100%);
 			color: white;
+			box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+		}
+		.btn-primary:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 20px rgba(0, 82, 204, 0.3);
 		}
 		.btn-danger {
-			background: #f56565;
+			background: #DE350B;
 			color: white;
+			box-shadow: 0 4px 12px rgba(222, 53, 11, 0.2);
 		}
-		.btn:hover {
-			opacity: 0.9;
+		.btn-danger:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 20px rgba(222, 53, 11, 0.3);
 		}
 		.tabs {
 			display: flex;
-			gap: 10px;
-			margin-bottom: 20px;
-			border-bottom: 2px solid #e1e8ed;
+			gap: 12px;
+			margin-bottom: 24px;
+			border-bottom: 2px solid #E1E4E8;
 		}
 		.tab {
-			padding: 12px 24px;
+			padding: 14px 28px;
 			cursor: pointer;
 			border-bottom: 3px solid transparent;
 			font-weight: 600;
-			color: #666;
-			transition: all 0.3s;
+			font-size: 14px;
+			color: #586069;
+			transition: all 0.2s;
+			border-radius: 8px 8px 0 0;
+		}
+		.tab:hover {
+			background: rgba(0, 82, 204, 0.04);
+			color: #0052CC;
 		}
 		.tab.active {
-			color: #667eea;
-			border-bottom-color: #667eea;
+			color: #0052CC;
+			border-bottom-color: #0052CC;
+			background: rgba(0, 82, 204, 0.04);
 		}
 		.tab-content {
 			display: none;
@@ -141,7 +196,8 @@ export class AdminDashboard {
 			left: 0;
 			width: 100%;
 			height: 100%;
-			background: rgba(0,0,0,0.5);
+			background: rgba(11, 31, 42, 0.5);
+			backdrop-filter: blur(4px);
 			align-items: center;
 			justify-content: center;
 			z-index: 1000;
@@ -151,10 +207,17 @@ export class AdminDashboard {
 		}
 		.modal-content {
 			background: white;
-			border-radius: 12px;
-			padding: 32px;
-			max-width: 500px;
+			border-radius: 16px;
+			padding: 36px;
+			max-width: 520px;
 			width: 90%;
+			box-shadow: 0 20px 60px rgba(11, 31, 42, 0.2);
+		}
+		.modal-content h2 {
+			color: #0B1F2A;
+			font-size: 22px;
+			font-weight: 700;
+			margin-bottom: 24px;
 		}
 		.form-group {
 			margin-bottom: 20px;
@@ -163,23 +226,48 @@ export class AdminDashboard {
 			display: block;
 			margin-bottom: 8px;
 			font-weight: 600;
-			color: #333;
+			font-size: 13px;
+			color: #0B1F2A;
+			text-transform: uppercase;
+			letter-spacing: 0.3px;
 		}
 		.form-group input,
 		.form-group select {
 			width: 100%;
-			padding: 10px;
-			border: 2px solid #e1e8ed;
-			border-radius: 6px;
-			font-size: 14px;
+			padding: 12px 16px;
+			border: 2px solid #E1E4E8;
+			border-radius: 8px;
+			font-size: 15px;
+			font-family: inherit;
+			transition: all 0.2s;
+		}
+		.form-group input:focus,
+		.form-group select:focus {
+			outline: none;
+			border-color: #0052CC;
+			box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+		}
+		.footer {
+			margin-top: 40px;
+			padding: 24px;
+			text-align: center;
+			color: #586069;
+			font-size: 13px;
+			border-top: 1px solid #E1E4E8;
+		}
+		.footer strong {
+			color: #0052CC;
 		}
 	</style>
 </head>
 <body>
 	<div class="header">
-		<div class="container">
-			<h1>🏢 Admin Dashboard</h1>
-			<p>Tenant Support System Management</p>
+		<div class="header-content">
+			<div class="logo-icon">⛪</div>
+			<div class="header-text">
+				<h1>Hospital Church Admin Dashboard</h1>
+				<p>Tenant Portal Management System • Powered by NWM Creative Works</p>
+			</div>
 		</div>
 	</div>
 
@@ -263,6 +351,10 @@ export class AdminDashboard {
 					<tbody></tbody>
 				</table>
 			</div>
+		</div>
+
+		<div class="footer">
+			<p>&copy; 2025 Hospital Church of Jacksonville | Powered by <strong>NWM Creative Works</strong></p>
 		</div>
 	</div>
 
