@@ -2,6 +2,7 @@ import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
 import { ThermostatUpdate as ThermostatUpdateSchema } from "./base";
+import { AlexaSmartHomeAPI } from "../alexa/smartHomeApi";
 
 export class ThermostatUpdate extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
@@ -45,6 +46,87 @@ export class ThermostatUpdate extends OpenAPIRoute {
 		const data = await this.getValidatedData<typeof this.schema>();
 		const { unit_number } = data.query as { unit_number: string };
 		const { target_temp, mode, fan_mode } = data.body as { target_temp?: number; mode?: string; fan_mode?: string };
+
+		// Check if there's a physical Alexa thermostat assigned to this unit
+		const device = await c.env.DB.prepare(
+			"SELECT * FROM thermostat_devices WHERE unit_number = ?"
+		)
+			.bind(unit_number)
+			.first();
+
+		if (device) {
+			// Use Alexa API to control physical thermostat
+			return this.controlPhysicalThermostat(c, device, target_temp, mode);
+		}
+
+		// Fall back to virtual thermostat (database only)
+		return this.controlVirtualThermostat(c, unit_number, target_temp, mode, fan_mode);
+	}
+
+	private async controlPhysicalThermostat(
+		c: Context,
+		device: any,
+		target_temp?: number,
+		mode?: string
+	) {
+		const alexaApi = new AlexaSmartHomeAPI();
+
+		// Set temperature if provided
+		if (target_temp !== undefined) {
+			const result = await alexaApi.setTemperature(
+				c,
+				device.device_id as string,
+				target_temp
+			);
+
+			if (result.error) {
+				return c.json({ success: false, error: result.error }, 400);
+			}
+
+			// Log activity
+			await c.env.DB.prepare(
+				"INSERT INTO activity_log (action_type, action_description, unit_number, metadata) VALUES (?, ?, ?, ?)"
+			)
+				.bind(
+					"thermostat_change",
+					`Temperature set to ${target_temp}°F`,
+					device.unit_number,
+					JSON.stringify({ device_id: device.device_id, temp: target_temp })
+				)
+				.run();
+
+			return {
+				success: true,
+				message: `Thermostat set to ${target_temp}°F`,
+				device: device.friendly_name,
+			};
+		}
+
+		// Set mode if provided
+		if (mode) {
+			const result = await alexaApi.setMode(c, device.device_id as string, mode);
+
+			if (result.error) {
+				return c.json({ success: false, error: result.error }, 400);
+			}
+
+			return {
+				success: true,
+				message: `Thermostat mode set to ${mode}`,
+				device: device.friendly_name,
+			};
+		}
+
+		return c.json({ error: "No changes specified" }, 400);
+	}
+
+	private async controlVirtualThermostat(
+		c: Context,
+		unit_number: string,
+		target_temp?: number,
+		mode?: string,
+		fan_mode?: string
+	) {
 
 		// Check if settings exist
 		const existing = await c.env.DB.prepare(
