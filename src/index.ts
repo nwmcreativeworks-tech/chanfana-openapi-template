@@ -1074,6 +1074,7 @@ app.get("/chatbot", async (c) => {
             chatMessages.parentElement.scrollTop = chatMessages.parentElement.scrollHeight;
 
             try {
+                console.log('Sending message:', message);
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
@@ -1087,7 +1088,16 @@ app.get("/chatbot", async (c) => {
                     }),
                 });
 
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error(\`Server returned \${response.status}: \${errorText}\`);
+                }
+
                 const data = await response.json();
+                console.log('Response data:', data);
 
                 // Save session ID
                 if (data.session_id) {
@@ -1099,12 +1109,16 @@ app.get("/chatbot", async (c) => {
                 typingIndicator.classList.remove('active');
 
                 // Add assistant message
-                addMessage('assistant', data.message, data.suggestions, data.action_taken);
+                if (data.message) {
+                    addMessage('assistant', data.message, data.suggestions, data.action_taken);
+                } else {
+                    addMessage('assistant', 'I received your message but had trouble generating a response. Please try again.');
+                }
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Chat error:', error);
                 typingIndicator.classList.remove('active');
-                addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+                addMessage('assistant', 'Sorry, I encountered an error: ' + error.message + '. Please check the console and try again.');
             }
 
             sendBtn.disabled = false;
