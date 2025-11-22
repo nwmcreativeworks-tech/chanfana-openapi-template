@@ -11,6 +11,7 @@ import {
 	AdminDevicesDelete,
 	AdminDevicesSync,
 } from "./devices";
+import { AlexaSetupStart, AlexaSetupCallback } from "./alexaSetup";
 
 const adminRouter = fromHono(new Hono());
 
@@ -35,5 +36,15 @@ adminRouter.post("/devices", AdminDevicesAdd);
 adminRouter.put("/devices/:id", AdminDevicesUpdate);
 adminRouter.delete("/devices/:id", AdminDevicesDelete);
 adminRouter.post("/devices/:id/sync", AdminDevicesSync);
+
+// Alexa OAuth setup
+adminRouter.get("/alexa/setup", async (c) => {
+	const setup = new AlexaSetupStart();
+	return setup.handle(c);
+});
+adminRouter.get("/alexa/callback", async (c) => {
+	const callback = new AlexaSetupCallback();
+	return callback.handle(c);
+});
 
 export default adminRouter;
