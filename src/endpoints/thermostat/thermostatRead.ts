@@ -29,7 +29,7 @@ export class ThermostatRead extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { unit_number } = data.query;
+		const { unit_number } = data.query as { unit_number: string };
 
 		const settings = await c.env.DB.prepare(
 			"SELECT * FROM thermostat_settings WHERE unit_number = ?"

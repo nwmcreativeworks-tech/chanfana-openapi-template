@@ -1,4 +1,4 @@
-import { OpenAPIRoute, OpenAPIRouteSchema, Path } from "chanfana";
+import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
 import { MaintenanceRequest } from "./base";
@@ -29,7 +29,7 @@ export class MaintenanceRead extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { id } = data.params;
+		const { id } = data.params as { id: string };
 
 		const request = await c.env.DB.prepare(
 			"SELECT * FROM maintenance_requests WHERE id = ?"

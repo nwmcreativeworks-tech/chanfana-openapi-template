@@ -30,7 +30,12 @@ export class ChatMessage extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { message, session_id, tenant_name, unit_number } = data.body;
+		const { message, session_id, tenant_name, unit_number } = data.body as {
+			message: string;
+			session_id?: string;
+			tenant_name?: string;
+			unit_number?: string;
+		};
 
 		// Generate or use existing session ID
 		const sessionId = session_id || crypto.randomUUID();

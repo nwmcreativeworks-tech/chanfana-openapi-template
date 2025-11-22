@@ -1,4 +1,4 @@
-import { OpenAPIRoute, OpenAPIRouteSchema, Query } from "chanfana";
+import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
 
@@ -44,7 +44,7 @@ export class ChatHistory extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { session_id } = data.query;
+		const { session_id } = data.query as { session_id: string };
 
 		// Get conversation
 		const conversation = await c.env.DB.prepare(

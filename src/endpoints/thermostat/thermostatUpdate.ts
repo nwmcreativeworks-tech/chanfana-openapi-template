@@ -1,7 +1,7 @@
 import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
-import { ThermostatUpdate } from "./base";
+import { ThermostatUpdate as ThermostatUpdateSchema } from "./base";
 
 export class ThermostatUpdate extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
@@ -14,7 +14,7 @@ export class ThermostatUpdate extends OpenAPIRoute {
 			body: {
 				content: {
 					"application/json": {
-						schema: ThermostatUpdate,
+						schema: ThermostatUpdateSchema,
 					},
 				},
 			},
@@ -43,8 +43,8 @@ export class ThermostatUpdate extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { unit_number } = data.query;
-		const { target_temp, mode, fan_mode } = data.body;
+		const { unit_number } = data.query as { unit_number: string };
+		const { target_temp, mode, fan_mode } = data.body as { target_temp?: number; mode?: string; fan_mode?: string };
 
 		// Check if settings exist
 		const existing = await c.env.DB.prepare(

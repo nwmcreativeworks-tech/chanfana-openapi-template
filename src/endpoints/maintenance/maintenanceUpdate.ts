@@ -39,8 +39,8 @@ export class MaintenanceUpdate extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { id } = data.params;
-		const { status, priority } = data.body;
+		const { id } = data.params as { id: string };
+		const { status, priority } = data.body as { status?: string; priority?: string };
 
 		// Check if request exists
 		const existing = await c.env.DB.prepare(

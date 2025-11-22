@@ -33,7 +33,11 @@ export class MaintenanceList extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { unit_number, status, limit } = data.query;
+		const { unit_number, status, limit } = data.query as {
+			unit_number?: string;
+			status?: string;
+			limit: string;
+		};
 
 		let query = "SELECT * FROM maintenance_requests WHERE 1=1";
 		const params: any[] = [];
