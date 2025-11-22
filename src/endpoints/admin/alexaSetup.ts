@@ -16,7 +16,7 @@ export class AlexaSetupStart {
 		await c.env.DB.prepare(
 			"INSERT INTO alexa_credentials (access_token, refresh_token, expires_at) VALUES (?, ?, datetime('now', '+10 minutes'))"
 		)
-			.bind(`STATE_${state}`, "", "")
+			.bind(`STATE_${state}`, "")
 			.run();
 
 		// Build Amazon OAuth URL
