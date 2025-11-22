@@ -1075,17 +1075,23 @@ app.get("/chatbot", async (c) => {
 
             try {
                 console.log('Sending message:', message);
+
+                // Build request body, only include session_id if it exists
+                const requestBody = {
+                    message,
+                    tenant_name: tenantName.value || undefined,
+                    unit_number: unitNumber.value || undefined,
+                };
+                if (sessionId) {
+                    requestBody.session_id = sessionId;
+                }
+
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        message,
-                        session_id: sessionId,
-                        tenant_name: tenantName.value || undefined,
-                        unit_number: unitNumber.value || undefined,
-                    }),
+                    body: JSON.stringify(requestBody),
                 });
 
                 console.log('Response status:', response.status);
