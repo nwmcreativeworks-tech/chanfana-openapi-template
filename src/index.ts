@@ -104,7 +104,7 @@ app.get("/chatbot", (c) => {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #8b5cf6 100%);
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -126,10 +126,11 @@ app.get("/chatbot", (c) => {
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
             color: white;
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
         }
 
         .chat-header h1 {
@@ -201,11 +202,13 @@ app.get("/chatbot", (c) => {
         }
 
         .message.user .message-avatar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            box-shadow: 0 4px 8px rgba(6, 182, 212, 0.3);
         }
 
         .message.assistant .message-avatar {
-            background: #28a745;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
         }
 
         .message-content {
@@ -217,8 +220,9 @@ app.get("/chatbot", (c) => {
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);
         }
 
         .message.assistant .message-content {
@@ -238,17 +242,20 @@ app.get("/chatbot", (c) => {
         .suggestion-btn {
             padding: 8px 16px;
             background: white;
-            border: 2px solid #667eea;
-            color: #667eea;
+            border: 2px solid #0ea5e9;
+            color: #0ea5e9;
             border-radius: 20px;
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            font-weight: 500;
         }
 
         .suggestion-btn:hover {
-            background: #667eea;
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
         }
 
         .action-taken {
@@ -283,23 +290,26 @@ app.get("/chatbot", (c) => {
         }
 
         .chat-input:focus {
-            border-color: #667eea;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
         }
 
         .send-btn {
             padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             font-size: 15px;
             font-weight: 600;
-            transition: transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
         }
 
         .send-btn:hover:not(:disabled) {
-            transform: scale(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
         }
 
         .send-btn:disabled {
@@ -354,8 +364,12 @@ app.get("/chatbot", (c) => {
         }
 
         .welcome-message h2 {
-            color: #667eea;
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 15px;
+            font-weight: 700;
         }
 
         .welcome-message ul {
