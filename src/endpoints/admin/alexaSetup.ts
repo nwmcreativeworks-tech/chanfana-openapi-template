@@ -22,7 +22,7 @@ export class AlexaSetupStart {
 		// Build Amazon OAuth URL
 		const authUrl = new URL("https://www.amazon.com/ap/oa");
 		authUrl.searchParams.set("client_id", clientId);
-		authUrl.searchParams.set("scope", "alexa::all");
+		authUrl.searchParams.set("scope", "profile");
 		authUrl.searchParams.set("response_type", "code");
 		authUrl.searchParams.set("redirect_uri", redirectUri);
 		authUrl.searchParams.set("state", state);
