@@ -864,8 +864,13 @@ app.get("/chatbot", async (c) => {
                     <input type="text" id="tenantName" placeholder="Enter your name (optional)">
                 </div>
                 <div class="input-group">
-                    <label for="unitNumber">Unit Number</label>
-                    <input type="text" id="unitNumber" placeholder="Enter unit number (optional)">
+                    <label for="unitNumber">Auditorium Name</label>
+                    <select id="unitNumber" style="width: 100%; padding: 12px 16px; border: 2px solid #E1E4E8; border-radius: 8px; font-size: 15px; font-family: inherit;">
+                        <option value="">Select Auditorium</option>
+                        <option value="Inspiration Studio">Inspiration Studio</option>
+                        <option value="Harmony Hall">Harmony Hall</option>
+                        <option value="Grace Auditorium">Grace Auditorium</option>
+                    </select>
                 </div>
             </div>
         </section>
@@ -874,7 +879,7 @@ app.get("/chatbot", async (c) => {
         <main class="portal-main">
             <!-- Welcome Section -->
             <section class="welcome-section">
-                <h2>How can we help your unit today?</h2>
+                <h2>How can we help your auditorium today?</h2>
                 <p>Select a service below or start a conversation in the chat.</p>
             </section>
 
@@ -892,7 +897,7 @@ app.get("/chatbot", async (c) => {
                     <div class="action-icon">🔧</div>
                     <div class="action-content">
                         <h3>Maintenance Requests</h3>
-                        <p>Report and track issues in your unit</p>
+                        <p>Report and track issues in your auditorium</p>
                     </div>
                 </div>
 
