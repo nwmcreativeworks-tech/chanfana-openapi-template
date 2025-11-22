@@ -4,6 +4,10 @@ import { tasksRouter } from "./endpoints/tasks/router";
 import chatRouter from "./endpoints/chat/router";
 import maintenanceRouter from "./endpoints/maintenance/router";
 import thermostatRouter from "./endpoints/thermostat/router";
+import authRouter from "./endpoints/auth/router";
+import adminRouter from "./endpoints/admin/router";
+import { AlexaSkillHandler } from "./endpoints/alexa/alexaSkill";
+import { AlexaOAuth } from "./endpoints/alexa/oauth";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { cors } from "hono/cors";
@@ -52,11 +56,36 @@ openapi.route("/chat", chatRouter);
 openapi.route("/maintenance", maintenanceRouter);
 openapi.route("/thermostat", thermostatRouter);
 
+// Register Authentication and Admin routers
+openapi.route("/auth", authRouter);
+openapi.route("/admin", adminRouter);
+
 // Register Tasks Sub router (example from template)
 openapi.route("/tasks", tasksRouter);
 
 // Register other endpoints
 openapi.post("/dummy/:slug", DummyEndpoint);
+
+// Alexa Skill endpoint
+app.post("/alexa", async (c) => {
+	const handler = new AlexaSkillHandler();
+	return handler.handle(c);
+});
+
+// Alexa OAuth endpoints
+const alexaOAuth = new AlexaOAuth();
+
+app.get("/alexa/authorize", async (c) => {
+	return alexaOAuth.authorize(c);
+});
+
+app.post("/alexa/authorize", async (c) => {
+	return alexaOAuth.authorizePost(c);
+});
+
+app.post("/alexa/token", async (c) => {
+	return alexaOAuth.token(c);
+});
 
 // Serve chat interface
 app.get("/chatbot", (c) => {

@@ -12,11 +12,16 @@ A **completely FREE** AI-powered tenant support chatbot system built with Cloudf
 
 - 🤖 **AI-Powered Chat** - Intelligent responses using Cloudflare Workers AI (Llama 3.1)
 - 🌡️ **Thermostat Control** - Tenants can adjust their temperature via chat (65°F - 78°F)
+- 🗣️ **Amazon Alexa Integration** - Control thermostat with voice commands ("Alexa, set temperature to 72")
 - 🔧 **Maintenance Requests** - Automated creation and tracking of maintenance tickets
+- 👥 **User Management** - Login system with role-based access (Admin, Tenant, Maintenance)
+- 📊 **Admin Dashboard** - Manage users, view activity logs, track who changed what
 - 🎥 **vMix Troubleshooting** - Step-by-step tech support for media equipment
 - 💬 **Knowledge Base** - Pre-loaded with common building FAQs and solutions
 - 📱 **Beautiful Web UI** - Responsive chat interface with conversation history
-- 📊 **OpenAPI Documentation** - Automatically generated API docs
+- 📝 **Activity Logging** - Track every action (who turned off the thermostat, when, etc.)
+- 🔐 **OAuth 2.0** - Secure account linking for Alexa
+- 📚 **OpenAPI Documentation** - Automatically generated API docs
 - 💯 **100% Free** - Uses Cloudflare's generous free tiers
 
 ### 💰 Free Tier Limits (More Than Enough!)
@@ -113,6 +118,10 @@ This will create:
 - `maintenance_requests` - Support tickets
 - `thermostat_settings` - Temperature controls per unit
 - `knowledge_base` - FAQs and troubleshooting guides
+- `users` - User accounts with role-based access
+- `user_sessions` - Login sessions
+- `activity_log` - Complete audit trail of all actions
+- `alexa_tokens` - Alexa account linking tokens
 
 ### Step 4: Test Locally
 
@@ -151,6 +160,26 @@ Your chatbot will be live at `https://tenant-support-chatbot.YOUR-SUBDOMAIN.work
 
 ### For Building Management
 
+#### Admin Dashboard
+
+Access the full-featured admin dashboard at `/admin/dashboard`:
+
+```
+https://your-worker.workers.dev/admin/dashboard
+```
+
+**Features:**
+- 👥 **User Management** - Add/remove tenants, assign units, manage roles
+- 📊 **Activity Log** - See who changed the thermostat and when
+- 🔧 **Maintenance Tracking** - View and manage all maintenance requests
+- 📈 **Statistics** - Real-time stats on users, requests, and activity
+
+**Default Admin Login:**
+- Email: `admin@building.com`
+- Password: `admin123` (⚠️ CHANGE THIS IMMEDIATELY!)
+
+#### API Access
+
 Access the maintenance dashboard via the API:
 
 ```bash
@@ -165,6 +194,23 @@ curl -X PUT https://your-worker.workers.dev/maintenance/42 \
   -H "Content-Type: application/json" \
   -d '{"status": "in_progress"}'
 ```
+
+### For Alexa Users
+
+Control your thermostat with voice commands!
+
+**Setup:**
+1. Go to Alexa app → Skills & Games
+2. Search for "My Apartment" (or your custom skill name)
+3. Enable the skill and link your account
+4. Enter your unit number and name when prompted
+
+**Voice Commands:**
+- "Alexa, ask my apartment to set temperature to 72"
+- "Alexa, tell my apartment to make it warmer"
+- "Alexa, ask my apartment to make it cooler"
+- "Alexa, ask my apartment what's the temperature"
+- "Alexa, tell my apartment my sink is leaking"
 
 ---
 
@@ -184,27 +230,25 @@ src/
 ├── index.ts                      # Main router + web UI
 ├── types.ts                      # TypeScript types
 └── endpoints/
-    ├── chat/
-    │   ├── router.ts            # Chat routes
-    │   ├── base.ts              # Chat schemas
-    │   ├── chatMessage.ts       # Main chat endpoint (AI logic)
-    │   └── chatHistory.ts       # Get conversation history
-    ├── maintenance/
-    │   ├── router.ts            # Maintenance routes
-    │   ├── base.ts              # Maintenance schemas
-    │   ├── maintenanceList.ts   # List requests
-    │   ├── maintenanceRead.ts   # Get request
-    │   └── maintenanceUpdate.ts # Update request
-    ├── thermostat/
-    │   ├── router.ts            # Thermostat routes
-    │   ├── base.ts              # Thermostat schemas
-    │   ├── thermostatRead.ts    # Get settings
-    │   └── thermostatUpdate.ts  # Update settings
-    └── tasks/                    # Example CRUD (from template)
+    ├── chat/                    # AI chatbot endpoints
+    ├── maintenance/             # Maintenance request management
+    ├── thermostat/              # Thermostat control
+    ├── auth/                    # User authentication
+    ├── admin/                   # Admin dashboard & user management
+    ├── alexa/                   # Amazon Alexa skill integration
+    │   ├── alexaSkill.ts       # Intent handlers
+    │   └── oauth.ts            # OAuth 2.0 account linking
+    └── tasks/                   # Example CRUD (from template)
 
 migrations/
-├── 0001_add_tasks_table.sql     # Example migration
-└── 0002_add_tenant_chatbot_tables.sql  # Chatbot tables
+├── 0001_add_tasks_table.sql
+├── 0002_add_tenant_chatbot_tables.sql
+├── 0003_add_alexa_tokens.sql
+└── 0004_add_user_management.sql
+
+alexa-skill/
+├── skill.json                   # Alexa skill manifest
+└── interactionModel.json        # Voice interaction model
 ```
 
 ---
@@ -223,6 +267,21 @@ migrations/
 ### Thermostat
 - `GET /thermostat?unit_number=101` - Get thermostat settings
 - `PUT /thermostat?unit_number=101` - Update thermostat
+
+### Authentication
+- `POST /auth/login` - User login (returns session token)
+
+### Admin (requires admin role)
+- `GET /admin/dashboard` - Admin dashboard UI
+- `GET /admin/users` - List all users
+- `POST /admin/users` - Create new user
+- `DELETE /admin/users/{id}` - Delete user
+- `GET /admin/activity` - Get activity log
+
+### Alexa Integration
+- `POST /alexa` - Alexa skill webhook
+- `GET /alexa/authorize` - OAuth authorization page
+- `POST /alexa/token` - OAuth token exchange
 
 ### Web Interface
 - `GET /chatbot` - Beautiful chat UI
@@ -266,6 +325,40 @@ const response = await c.env.AI.run("@cf/meta/llama-3.1-70b-instruct", {  // Use
 ```
 
 Available models: https://developers.cloudflare.com/workers-ai/models/
+
+### Setup Amazon Alexa Skill
+
+To enable voice control via Alexa:
+
+1. **Create an Alexa Skill**:
+   - Go to [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask)
+   - Click "Create Skill"
+   - Name it "My Apartment" (or your preference)
+   - Choose "Custom" model and "Provision your own" backend
+
+2. **Import Interaction Model**:
+   - In the skill builder, go to "JSON Editor"
+   - Copy the contents of `alexa-skill/interactionModel.json`
+   - Paste and save
+
+3. **Configure Endpoint**:
+   - Go to "Endpoint" section
+   - Select "HTTPS"
+   - Enter your worker URL: `https://your-worker.workers.dev/alexa`
+   - Select "My development endpoint is a sub-domain of a domain that has a wildcard certificate from a certificate authority"
+
+4. **Setup Account Linking**:
+   - Go to "Account Linking" section
+   - Authorization URI: `https://your-worker.workers.dev/alexa/authorize`
+   - Access Token URI: `https://your-worker.workers.dev/alexa/token`
+   - Client ID: `alexa-client` (any value)
+   - Authorization Grant Type: "Auth Code Grant"
+   - Domain List: Add your worker domain
+
+5. **Test Your Skill**:
+   - Go to "Test" tab
+   - Enable testing for "Development"
+   - Try: "Ask my apartment to set temperature to 72"
 
 ---
 

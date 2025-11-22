@@ -1,0 +1,44 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "summary": "Control your apartment thermostat with voice commands",
+          "examplePhrases": [
+            "Alexa, ask my apartment to set temperature to 72",
+            "Alexa, tell my apartment to make it warmer",
+            "Alexa, ask my apartment what's the temperature"
+          ],
+          "name": "My Apartment",
+          "description": "Control your apartment's thermostat, submit maintenance requests, and get building information using voice commands. Perfect for hands-free climate control!"
+        }
+      },
+      "isAvailableWorldwide": true,
+      "testingInstructions": "1. Link your account with unit number\n2. Try: 'Alexa, ask my apartment to set temperature to 72'\n3. Try: 'Alexa, tell my apartment it's too cold'",
+      "category": "SMART_HOME",
+      "distributionCountries": []
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "https://tenant-support-chatbot.YOUR-SUBDOMAIN.workers.dev/alexa"
+        },
+        "interfaces": []
+      }
+    },
+    "manifestVersion": "1.0",
+    "permissions": [],
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "en-US": {
+          "privacyPolicyUrl": "https://example.com/privacy"
+        }
+      }
+    }
+  }
+}

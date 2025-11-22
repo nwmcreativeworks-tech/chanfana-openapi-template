@@ -1,0 +1,90 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "my apartment",
+      "intents": [
+        {
+          "name": "SetTemperatureIntent",
+          "slots": [
+            {
+              "name": "temperature",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "set temperature to {temperature}",
+            "set the temperature to {temperature} degrees",
+            "make it {temperature} degrees",
+            "set thermostat to {temperature}",
+            "change temperature to {temperature}"
+          ]
+        },
+        {
+          "name": "IncreaseTemperatureIntent",
+          "slots": [],
+          "samples": [
+            "make it warmer",
+            "make it hotter",
+            "turn up the heat",
+            "increase the temperature",
+            "raise the temperature",
+            "it's too cold"
+          ]
+        },
+        {
+          "name": "DecreaseTemperatureIntent",
+          "slots": [],
+          "samples": [
+            "make it cooler",
+            "make it colder",
+            "turn down the heat",
+            "decrease the temperature",
+            "lower the temperature",
+            "it's too hot"
+          ]
+        },
+        {
+          "name": "GetTemperatureIntent",
+          "slots": [],
+          "samples": [
+            "what's the temperature",
+            "what is the current temperature",
+            "what's it set to",
+            "what's the thermostat set to",
+            "check the temperature"
+          ]
+        },
+        {
+          "name": "MaintenanceRequestIntent",
+          "slots": [
+            {
+              "name": "issue",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "submit a maintenance request for {issue}",
+            "report {issue}",
+            "my {issue}",
+            "there's a problem with {issue}",
+            "{issue} is broken",
+            "{issue} isn't working"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    }
+  }
+}
