@@ -1137,6 +1137,7 @@ app.get("/chatbot", async (c) => {
     </script>
 </body>
 </html>`;
+	return c.html(html);
 });
 
 // Export the Hono app
