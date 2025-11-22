@@ -1130,9 +1130,11 @@ app.get("/chatbot", async (c) => {
             messageDiv.className = \`message \${role}\`;
 
             const avatar = role === 'user' ? '👤' : '🤖';
+            // Escape newlines in content
+            const formattedContent = String(content).replace(/\\n/g, '<br>');
             messageDiv.innerHTML = \`
                 <div class="message-avatar">\${avatar}</div>
-                <div class="message-content">\${content.replace(/\n/g, '<br>')}</div>
+                <div class="message-content">\${formattedContent}</div>
             \`;
 
             chatMessages.appendChild(messageDiv);
