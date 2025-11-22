@@ -8,6 +8,34 @@ export class AdminDashboard {
 	<meta charset="UTF-8">
 	<title>Admin Dashboard - Hospital Church Portal</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script>
+		// Authentication check - must be logged in as admin
+		(async function checkAuth() {
+			const sessionToken = localStorage.getItem('sessionToken');
+			if (!sessionToken) {
+				window.location.href = '/login';
+				return;
+			}
+
+			const response = await fetch('/auth/tenant/verify', {
+				headers: { 'Authorization': \`Bearer \${sessionToken}\` }
+			});
+
+			if (!response.ok) {
+				localStorage.removeItem('sessionToken');
+				window.location.href = '/login';
+				return;
+			}
+
+			const data = await response.json();
+			// Check if user is admin
+			if (data.user.role !== 'admin') {
+				alert('Access denied. Admin privileges required.');
+				window.location.href = '/chatbot';
+				return;
+			}
+		})();
+	</script>
 	<style>
 		* { margin: 0; padding: 0; box-sizing: border-box; }
 		body {
@@ -304,7 +332,7 @@ export class AdminDashboard {
 						<tr>
 							<th>Name</th>
 							<th>Email</th>
-							<th>Unit</th>
+							<th>Auditorium</th>
 							<th>Role</th>
 							<th>Status</th>
 							<th>Last Login</th>
@@ -325,7 +353,7 @@ export class AdminDashboard {
 							<th>Time</th>
 							<th>User</th>
 							<th>Action</th>
-							<th>Unit</th>
+							<th>Auditorium</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -340,7 +368,7 @@ export class AdminDashboard {
 					<thead>
 						<tr>
 							<th>ID</th>
-							<th>Unit</th>
+							<th>Auditorium</th>
 							<th>Tenant</th>
 							<th>Category</th>
 							<th>Description</th>
@@ -375,8 +403,13 @@ export class AdminDashboard {
 					<input type="password" name="password" required>
 				</div>
 				<div class="form-group">
-					<label>Unit Number</label>
-					<input type="text" name="unit_number">
+					<label>Auditorium Name</label>
+					<select name="unit_number">
+						<option value="">Select Auditorium</option>
+						<option value="Inspiration Studio">Inspiration Studio</option>
+						<option value="Harmony Hall">Harmony Hall</option>
+						<option value="Grace Auditorium">Grace Auditorium</option>
+					</select>
 				</div>
 				<div class="form-group">
 					<label>Role</label>

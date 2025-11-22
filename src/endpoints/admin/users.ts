@@ -67,8 +67,8 @@ export class AdminUsersCreate extends OpenAPIRoute {
 			role: string;
 		};
 
-		// Simple hash (INSECURE - use bcrypt in production!)
-		const passwordHash = password + "hash";
+		// Store password as-is (for small church use - not high security)
+		const passwordHash = password;
 
 		await c.env.DB.prepare(
 			"INSERT INTO users (email, password_hash, full_name, unit_number, role) VALUES (?, ?, ?, ?, ?)"
