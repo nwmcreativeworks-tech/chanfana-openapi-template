@@ -1023,24 +1023,44 @@ app.get("/chatbot", async (c) => {
         }
 
         // Quick action handlers
-        function startAction(action) {
+        window.startAction = function(action) {
+            // Validate name is filled
+            if (!tenantName.value.trim()) {
+                alert('Please enter your name before using the chatbot.');
+                tenantName.focus();
+                return;
+            }
+
             const messages = {
                 thermostat: "I need help with the thermostat",
                 maintenance: "I need to submit a maintenance request",
                 media: "I need help with vMix or media equipment",
                 info: "I need information about the building"
             };
-            messageInput.value = messages[action];
-            messageInput.focus();
-        }
 
-        function showPrivacy() {
-            alert('Privacy Policy would be shown here');
-        }
+            const message = messages[action];
+            if (message) {
+                messageInput.value = message;
+                // Automatically submit the form
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        };
+
+        window.showPrivacy = function() {
+            alert('Privacy Policy: Your conversations are private and used only to provide support. Data is stored securely and never shared with third parties.');
+        };
 
         // Handle form submission
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Validate name is filled
+            if (!tenantName.value.trim()) {
+                alert('Please enter your name before using the chatbot.');
+                tenantName.focus();
+                return;
+            }
+
             const message = messageInput.value.trim();
             if (!message) return;
 
