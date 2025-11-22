@@ -20,9 +20,10 @@ export class AlexaSetupStart {
 			.run();
 
 		// Build Amazon OAuth URL
+		// Note: We need to use Alexa Voice Service scope for device access
 		const authUrl = new URL("https://www.amazon.com/ap/oa");
 		authUrl.searchParams.set("client_id", clientId);
-		authUrl.searchParams.set("scope", "profile");
+		authUrl.searchParams.set("scope", "alexa::skills:account_linking");
 		authUrl.searchParams.set("response_type", "code");
 		authUrl.searchParams.set("redirect_uri", redirectUri);
 		authUrl.searchParams.set("state", state);
