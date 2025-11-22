@@ -202,10 +202,10 @@ export class AlexaSetupCallback {
 		)
 			.bind(
 				tokenData.access_token,
-				tokenData.refresh_token,
+				tokenData.refresh_token || "",
 				tokenData.token_type || "Bearer",
 				expiresAt,
-				tokenData.scope
+				tokenData.scope || "profile"
 			)
 			.run();
 
