@@ -65,12 +65,43 @@ export class MaintenanceWorkflow {
 	 * STEP 1: Opening Gate & Contact Information
 	 */
 	private async handleStep1(c: Context, draft: any, userMessage: string) {
-		// If this is the first message, show opening gate
-		if (!draft.organization_name) {
+		// If organization_name is already set, this shouldn't happen (should be on step 2+)
+		// But if it does, just move to step 2
+		if (draft.organization_name) {
 			await c.env.DB.prepare(
-				"UPDATE maintenance_request_drafts SET current_step = 1 WHERE id = ?"
+				"UPDATE maintenance_request_drafts SET current_step = 2 WHERE id = ?"
 			).bind(draft.id).run();
 
+			return {
+				message: `✅ Contact information already saved!
+
+**STEP 2 OF 11: Location Confirmation**
+
+Where is the issue located? Be specific.
+
+Please select or type:
+• Inspiration Studio
+• Harmony Hall
+• Grace Auditorium
+• Media Booth
+• Lobby
+• Classroom (specify number)
+• Hallway
+• Restroom (Men/Women)
+• Storage Room
+• Outdoor / Parking
+• Other (please specify)
+
+*Just type the location name*`,
+				step: 2,
+				completed: false
+			};
+		}
+
+		// Check if this is the initial trigger message (not actual contact info)
+		const lowerMsg = userMessage.toLowerCase();
+		if (lowerMsg.includes("maintenance request") || lowerMsg.includes("submit") || userMessage.length < 20) {
+			// Show opening gate
 			return {
 				message: `🏛️ **MAINTENANCE REQUEST PORTAL**
 
@@ -108,8 +139,8 @@ Please provide:
 			[contactName, contactRole] = nameAndRole.split(" - ").map(s => s.trim());
 		}
 
-		// Validate
-		if (!orgName || !contactName || !phone || !email) {
+		// Validate - make email optional for now
+		if (!orgName || !contactName || !phone) {
 			return {
 				message: `❌ **Missing Information**
 
@@ -117,9 +148,12 @@ Please provide all required information in this format:
 1. Organization/Church group name
 2. Your full name and position
 3. Phone number
-4. Email address
+4. Email address (optional)
 
-*Example: "Grace Ministry, John Smith - Media Director, 555-1234, john@email.com"*`,
+*Example: "Grace Ministry, John Smith - Media Director, 555-1234, john@email.com"*
+
+You provided: "${userMessage}"
+Missing: ${!orgName ? "Organization name, " : ""}${!contactName ? "Name, " : ""}${!phone ? "Phone number" : ""}`,
 				step: 1,
 				completed: false
 			};
