@@ -1,7 +1,7 @@
 -- Tenant Chatbot System Tables
 
 -- Chat conversations
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     session_id TEXT NOT NULL UNIQUE,
     tenant_name TEXT,
@@ -11,7 +11,7 @@ CREATE TABLE conversations (
 );
 
 -- Chat messages
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     conversation_id INTEGER NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
@@ -21,7 +21,7 @@ CREATE TABLE messages (
 );
 
 -- Maintenance requests
-CREATE TABLE maintenance_requests (
+CREATE TABLE IF NOT EXISTS maintenance_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     conversation_id INTEGER,
     tenant_name TEXT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE maintenance_requests (
 );
 
 -- Thermostat settings
-CREATE TABLE thermostat_settings (
+CREATE TABLE IF NOT EXISTS thermostat_settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     unit_number TEXT NOT NULL UNIQUE,
     current_temp REAL,
@@ -52,7 +52,7 @@ CREATE TABLE thermostat_settings (
 );
 
 -- Knowledge base for common questions and vMix troubleshooting
-CREATE TABLE knowledge_base (
+CREATE TABLE IF NOT EXISTS knowledge_base (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     category TEXT NOT NULL CHECK(category IN ('vmix', 'media_equipment', 'building_info', 'thermostat', 'general')),
     question TEXT NOT NULL,
