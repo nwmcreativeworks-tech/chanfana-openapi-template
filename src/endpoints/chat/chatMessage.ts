@@ -71,6 +71,7 @@ export class ChatMessage extends OpenAPIRoute {
 
 		let actionTaken;
 		let responseText;
+		let intent = { action: "general" }; // Default intent
 
 		// If there's an active maintenance workflow, continue it
 		if (activeDraft) {
@@ -82,6 +83,7 @@ export class ChatMessage extends OpenAPIRoute {
 			} else {
 				actionTaken = { type: "maintenance_workflow_step", step: result.step, details: result };
 			}
+			intent = { action: "maintenance_request" }; // Set intent for suggestions
 		} else {
 			// Get conversation history
 			const history = await this.getConversationHistory(c, conversation.id);
@@ -90,7 +92,7 @@ export class ChatMessage extends OpenAPIRoute {
 			const systemPrompt = await this.buildSystemPrompt(c, unit_number);
 
 			// Detect intent and check for special actions
-			const intent = await this.detectIntent(message);
+			intent = await this.detectIntent(message);
 
 			// Handle special actions
 			if (intent.action === "thermostat_control" && unit_number) {
