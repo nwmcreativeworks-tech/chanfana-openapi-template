@@ -50,8 +50,6 @@ export class MaintenanceWorkflow {
 				return await this.handleStep7(c, draft, userMessage);
 			case 8:
 				return await this.handleStep8(c, draft, userMessage);
-			case 9:
-				return await this.handleStep9(c, draft, userMessage);
 			case 10:
 				return await this.handleStep10(c, draft, userMessage);
 			case 11:
@@ -544,11 +542,11 @@ Please describe the equipment:
 
 		if (lowerMsg.includes("photos ready") || lowerMsg.includes("ready")) {
 			await c.env.DB.prepare(
-				`UPDATE maintenance_request_drafts SET evidence_uploaded = 1, current_step = 9, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+				`UPDATE maintenance_request_drafts SET evidence_uploaded = 1, current_step = 10, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
 			).bind(draft.id).run();
 		} else if (lowerMsg.includes("skip")) {
 			await c.env.DB.prepare(
-				`UPDATE maintenance_request_drafts SET evidence_uploaded = 0, current_step = 9, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+				`UPDATE maintenance_request_drafts SET evidence_uploaded = 0, current_step = 10, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
 			).bind(draft.id).run();
 		} else {
 			return {
@@ -561,47 +559,7 @@ Please describe the equipment:
 		return {
 			message: `✅ Evidence noted
 
-**STEP 9 OF 11: Access & Availability**
-
-When can someone access this area for inspection or repair?
-
-Please provide:
-1. Preferred days/times
-2. On-site contact for access
-3. Special access needs (keys, codes, etc.)
-
-*Example: "Weekdays 9am-5pm, Contact Sarah Johnson 555-9876, Need key from church office"*`,
-			step: 9,
-			completed: false
-		};
-	}
-
-	/**
-	 * STEP 9: Access & Availability
-	 */
-	private async handleStep9(c: Context, draft: any, userMessage: string) {
-		const accessInfo = userMessage.trim();
-
-		if (accessInfo.length < 20) {
-			return {
-				message: `❌ Please provide complete access information:
-• When (days/times)
-• Who to contact
-• Any special access requirements`,
-				step: 9,
-				completed: false
-			};
-		}
-
-		// Parse access info (simple approach)
-		await c.env.DB.prepare(
-			`UPDATE maintenance_request_drafts SET access_window = ?, current_step = 10, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-		).bind(accessInfo, draft.id).run();
-
-		return {
-			message: `✅ Access information saved
-
-**STEP 10 OF 11: Liability Confirmation**
+**STEP 9 OF 10: Liability Confirmation**
 
 ⚖️ **IMPORTANT LEGAL ACKNOWLEDGMENT**
 
@@ -634,7 +592,7 @@ Type:
 			return {
 				message: `✅ Terms accepted
 
-**STEP 11 OF 11: Final Submission**
+**STEP 10 OF 10: Final Submission**
 
 Please review your request:
 
@@ -700,35 +658,18 @@ Your information has been discarded. You can start a new request anytime by sayi
 		const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
 		const ticketNumber = `HCX-${year}-${randomNum}`;
 
-		// Create final maintenance request
+		// Create final maintenance request with only core fields that exist
 		await c.env.DB.prepare(
 			`INSERT INTO maintenance_requests
-			(ticket_number, conversation_id, tenant_name, unit_number, category, priority, description, status,
-			 organization_name, contact_name, contact_role, contact_phone, contact_email,
-			 location, location_details, urgency_level, incident_description, probable_cause,
-			 equipment_involved, equipment_details, access_window, liability_confirmed)
-			VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`
+			(conversation_id, tenant_name, unit_number, category, priority, description, status)
+			VALUES (?, ?, ?, ?, ?, ?, 'open')`
 		).bind(
-			ticketNumber,
 			draft.conversation_id,
-			draft.organization_name || draft.contact_name,
+			draft.contact_name || draft.organization_name,
 			draft.location,
-			draft.issue_category,
+			draft.issue_category || "other",
 			draft.urgency_level === "Critical" || draft.urgency_level === "High" ? "high" : "medium",
-			draft.incident_description,
-			draft.organization_name,
-			draft.contact_name,
-			draft.contact_role,
-			draft.contact_phone,
-			draft.contact_email,
-			draft.location,
-			draft.location_details || null,
-			draft.urgency_level,
-			draft.incident_description,
-			draft.probable_cause,
-			draft.equipment_involved,
-			draft.equipment_details,
-			draft.access_window,
+			`TICKET: ${ticketNumber}\nORG: ${draft.organization_name}\nCONTACT: ${draft.contact_name} (${draft.contact_role})\nPHONE: ${draft.contact_phone}\nEMAIL: ${draft.contact_email}\nLOCATION: ${draft.location}\nCATEGORY: ${draft.issue_category}\nURGENCY: ${draft.urgency_level}\n\nDESCRIPTION:\n${draft.incident_description}\n\nCAUSE: ${draft.probable_cause}\nEQUIPMENT: ${draft.equipment_involved || 'N/A'}${draft.equipment_details ? '\nDETAILS: ' + draft.equipment_details : ''}`
 		).run();
 
 		// Mark draft as completed
