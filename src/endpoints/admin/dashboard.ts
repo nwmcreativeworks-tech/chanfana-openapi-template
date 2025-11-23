@@ -343,6 +343,28 @@ export class AdminDashboard extends OpenAPIRoute {
 		.photo-btn-small:hover {
 			background: #0065FF;
 		}
+		.photo-gallery {
+			display: flex;
+			gap: 12px;
+			flex-wrap: wrap;
+			padding: 20px;
+			max-height: 500px;
+			overflow-y: auto;
+		}
+		.admin-photo {
+			width: 130px;
+			height: 130px;
+			object-fit: cover;
+			margin: 8px;
+			border-radius: 6px;
+			cursor: pointer;
+			transition: transform 0.2s, box-shadow 0.2s;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		}
+		.admin-photo:hover {
+			transform: scale(1.1);
+			box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+		}
 	</style>
 </head>
 <body>
@@ -658,7 +680,7 @@ export class AdminDashboard extends OpenAPIRoute {
 					<td>\${req.category}</td>
 					<td>\${req.description.substring(0, 50)}...</td>
 					<td>
-						\${req.photos ? \`<button class="photo-btn-small" onclick="viewRequestPhotos(\${req.id})">📷 View</button>\` : '-'}
+						\${req.photos ? \`<button class="photo-btn-small" onclick='viewRequestPhotos(\${JSON.stringify(req.photos).replace(/'/g, "&apos;")})'>📷 View (\${typeof req.photos === 'string' ? JSON.parse(req.photos || "[]").length : (Array.isArray(req.photos) ? req.photos.length : 0)})</button>\` : '-'}
 					</td>
 					<td>\${req.status}</td>
 					<td>\${new Date(req.created_at).toLocaleDateString()}</td>
@@ -862,6 +884,29 @@ export class AdminDashboard extends OpenAPIRoute {
 				alert('Failed to save knowledge entry');
 			}
 		});
+
+		// Photo viewer functions
+		function viewRequestPhotos(photos) {
+			const photoArray = typeof photos === 'string' ? JSON.parse(photos) : photos;
+			const container = document.getElementById('photoGallery');
+			container.innerHTML = '';
+
+			photoArray.forEach(photoData => {
+				const url = typeof photoData === 'string' ? photoData : photoData.data;
+				const img = document.createElement('img');
+				img.src = url;
+				img.className = 'admin-photo';
+				img.onclick = () => window.open(url, '_blank');
+				img.title = 'Click to open full size';
+				container.appendChild(img);
+			});
+
+			document.getElementById('photoViewerModal').classList.add('active');
+		}
+
+		function closePhotoViewer() {
+			document.getElementById('photoViewerModal').classList.remove('active');
+		}
 
 		// Load data on page load
 		loadDashboard();

@@ -1034,7 +1034,7 @@ app.get("/chatbot", async (c) => {
                 <!-- Photo Preview Area -->
                 <div id="photoPreview" class="photo-preview-area" style="display: none;">
                     <div class="photo-preview-header">
-                        <span>📸 Photos to upload (<span id="photoCount">0</span>/3)</span>
+                        <span>📸 Photos to upload (<span id="photoCount">0</span>/30)</span>
                         <button type="button" onclick="clearPhotos()" class="clear-photos-btn">Clear All</button>
                     </div>
                     <div id="photoThumbnails" class="photo-thumbnails"></div>
@@ -1130,7 +1130,7 @@ app.get("/chatbot", async (c) => {
 
         // Photo Upload Handling
         let selectedPhotos = [];
-        const MAX_PHOTOS = 3;
+        const MAX_PHOTOS = 30;
         const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per photo
 
         window.handlePhotoSelect = function(event) {
