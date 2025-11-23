@@ -10,6 +10,18 @@ import { AlexaSkillHandler } from "./endpoints/alexa/alexaSkill";
 import { AlexaOAuth } from "./endpoints/alexa/oauth";
 import { AlexaSmartHomeSkillHandler } from "./endpoints/alexa/smartHomeSkill";
 import { AlexaHandler } from "./endpoints/alexa";
+import { AlexaSyncDevicesHandler } from "./endpoints/alexa/syncDevices";
+import {
+	GetRooms,
+	CreateRoom,
+	DeleteRoom,
+	GetThermostats,
+	AssignThermostatToRoom,
+	UnassignThermostatFromRoom,
+	GetTenantPermissions,
+	CreateTenantPermission,
+	DeleteTenantPermission,
+} from "./endpoints/admin/roomManagement";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { cors } from "hono/cors";
@@ -100,6 +112,24 @@ app.post("/alexa/authorize", async (c) => {
 app.post("/alexa/token", async (c) => {
 	return alexaOAuth.token(c);
 });
+
+// Alexa Device Sync endpoint
+openapi.get("/alexa/sync-devices", AlexaSyncDevicesHandler);
+
+// Admin Room Management endpoints
+openapi.get("/admin/rooms", GetRooms);
+openapi.post("/admin/rooms", CreateRoom);
+openapi.delete("/admin/rooms/:id", DeleteRoom);
+
+// Admin Thermostat Management endpoints
+openapi.get("/admin/thermostats", GetThermostats);
+openapi.patch("/admin/thermostats/:id", AssignThermostatToRoom);
+openapi.patch("/admin/thermostats/:id/unassign", UnassignThermostatFromRoom);
+
+// Admin Tenant Permissions endpoints
+openapi.get("/admin/permissions", GetTenantPermissions);
+openapi.post("/admin/permissions", CreateTenantPermission);
+openapi.delete("/admin/permissions/:id", DeleteTenantPermission);
 
 // Privacy Policy page
 app.get("/privacy", (c) => {

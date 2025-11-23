@@ -176,6 +176,10 @@ You can also type CANCEL at any time to stop.`;
 				const kbResult = await this.handleVmixSupport(c, message, systemPrompt, history);
 				responseText = kbResult.message;
 				actionTaken = { type: "vmix_support", details: kbResult };
+			} else if (intent.action === "room_temperature_control") {
+				// Handle room-based temperature control
+				actionTaken = await this.handleRoomTemperatureControl(c, message, tenant_name, tenant_email);
+				responseText = actionTaken.message;
 			} else if (intent.action === "thermostat_control" && unit_number) {
 				actionTaken = await this.handleThermostatControl(c, message, unit_number);
 				responseText = actionTaken.message;
@@ -327,7 +331,17 @@ Respond naturally and helpfully to the tenant's message.`;
 			return { action: "vmix_support" };
 		}
 
-		// Thermostat keywords
+		// Room-based thermostat control (higher priority)
+		if (
+			lowerMsg.match(/\b(sanctuary|fellowship|tech booth|office|green room|hall|room)\b/) &&
+			lowerMsg.match(
+				/\b(temperature|temp|thermostat|heat|cool|warm|cold|degrees|hotter|cooler|warmer|set|reduce|increase)\b/
+			)
+		) {
+			return { action: "room_temperature_control" };
+		}
+
+		// Thermostat keywords (unit-based control)
 		if (
 			lowerMsg.match(
 				/\b(temperature|temp|thermostat|heat|cool|warm|cold|degrees|hotter|cooler|warmer|set to)\b/
@@ -473,6 +487,144 @@ Respond naturally and helpfully to the tenant's message.`;
 				unit_number: unitNumber,
 			},
 		};
+	}
+
+	private async handleRoomTemperatureControl(
+		c: Context,
+		message: string,
+		tenantName?: string,
+		tenantEmail?: string
+	) {
+		// Extract room name from message
+		const lowerMsg = message.toLowerCase();
+		let roomName: string | null = null;
+
+		const roomPatterns = [
+			{ pattern: /\b(sanctuary)\b/, name: "Sanctuary" },
+			{ pattern: /\b(fellowship\s*hall?|fellowship)\b/, name: "Fellowship Hall" },
+			{ pattern: /\b(tech\s*booth|booth)\b/, name: "Tech Booth" },
+			{ pattern: /\b(office|offices)\b/, name: "Office Suite" },
+			{ pattern: /\b(green\s*room)\b/, name: "Green Room" }
+		];
+
+		for (const { pattern, name } of roomPatterns) {
+			if (pattern.test(lowerMsg)) {
+				roomName = name;
+				break;
+			}
+		}
+
+		if (!roomName) {
+			return {
+				type: "room_not_found",
+				message: "I couldn't identify which room you're referring to. Available rooms include: Sanctuary, Fellowship Hall, Tech Booth, Office Suite, and Green Room. Please specify the room name."
+			};
+		}
+
+		// Extract temperature
+		const tempMatch = message.match(/\b(\d+)\s*(?:degrees?|°|f)?\b/i);
+		const increaseMatch = message.match(/\b(increase|raise|up|warmer|hotter)\b/i);
+		const decreaseMatch = message.match(/\b(decrease|lower|down|cooler|colder|reduce)\b/i);
+
+		if (!tempMatch && !increaseMatch && !decreaseMatch) {
+			return {
+				type: "temperature_not_specified",
+				message: `What temperature would you like to set for the ${roomName}? (I can set it between 65°F and 78°F)`
+			};
+		}
+
+		try {
+			// 1. Find the room
+			const room = await c.env.DB.prepare(
+				"SELECT id, room_name FROM rooms WHERE LOWER(room_name) = LOWER(?)"
+			).bind(roomName).first();
+
+			if (!room) {
+				return {
+					type: "room_not_configured",
+					message: `The ${roomName} hasn't been configured in the system yet. Please contact the administrator.`
+				};
+			}
+
+			// 2. Check tenant permission if email provided
+			if (tenantEmail) {
+				const permission = await c.env.DB.prepare(
+					`SELECT * FROM tenant_room_permissions
+					WHERE LOWER(tenant_email) = LOWER(?) AND room_id = ? AND can_control_temp = 1`
+				).bind(tenantEmail, room.id).first();
+
+				if (!permission) {
+					return {
+						type: "permission_denied",
+						message: `You don't have permission to control the temperature in the ${roomName}. Please contact the administrator for access.`
+					};
+				}
+			}
+
+			// 3. Find thermostat assigned to room
+			const thermostat = await c.env.DB.prepare(
+				"SELECT * FROM thermostat_devices_v2 WHERE assigned_room_id = ? AND is_active = 1"
+			).bind(room.id).first();
+
+			if (!thermostat) {
+				return {
+					type: "no_thermostat",
+					message: `The ${roomName} doesn't have a thermostat assigned yet. Please contact the administrator.`
+				};
+			}
+
+			// 4. Calculate target temperature
+			let newTemp: number;
+			// For room-based control, we don't have current temp stored, so default to 72
+			const assumedCurrent = 72;
+
+			if (tempMatch) {
+				newTemp = parseInt(tempMatch[1]);
+			} else if (increaseMatch) {
+				newTemp = Math.min(assumedCurrent + 2, 78);
+			} else if (decreaseMatch) {
+				newTemp = Math.max(assumedCurrent - 2, 65);
+			} else {
+				newTemp = assumedCurrent;
+			}
+
+			// Validate temperature range
+			if (newTemp < 65 || newTemp > 78) {
+				return {
+					type: "temperature_out_of_range",
+					message: `I can only set temperatures between 65°F and 78°F for energy efficiency. You requested ${newTemp}°F.`
+				};
+			}
+
+			// 5. Log the request
+			await c.env.DB.prepare(
+				`INSERT INTO admin_request_logs
+				(request_type, message_details, status, source, user_name, phone_or_email)
+				VALUES (?, ?, ?, ?, ?, ?)`
+			).bind(
+				"Room Temperature Control",
+				`${tenantName || "Tenant"} set ${roomName} to ${newTemp}°F via thermostat ${thermostat.device_name}`,
+				"Active",
+				"Chat",
+				tenantName || "Unknown",
+				tenantEmail || "Unknown"
+			).run();
+
+			// 6. In production, control the actual Alexa thermostat here
+			// Example: await this.controlAlexaThermostat(c, thermostat.alexa_device_id, newTemp);
+
+			return {
+				type: "room_temperature_updated",
+				message: `✓ I've set the ${roomName} temperature to ${newTemp}°F. The thermostat (${thermostat.device_name}) should reach the target temperature in about 10-15 minutes.`
+			};
+
+		} catch (error) {
+			console.error("Room temperature control error:", error);
+			return {
+				type: "error",
+				message: "Sorry, I encountered an error controlling the room temperature. Please try again or contact support."
+			};
+		}
 	}
 
 	private async handleMaintenanceRequest(

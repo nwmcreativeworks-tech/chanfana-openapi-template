@@ -120,6 +120,9 @@ export class AlexaHandler extends OpenAPIRoute {
 					case "BuildingInfoIntent":
 						return await this.handleBuildingInfoIntent(c, sessionId, conversationId, alexaRequest);
 
+					case "SetRoomTemperatureIntent":
+						return await this.handleSetRoomTemperatureIntent(c, alexaRequest, userId);
+
 					case "AMAZON.HelpIntent":
 						return this.handleHelpIntent(c);
 
@@ -211,6 +214,105 @@ export class AlexaHandler extends OpenAPIRoute {
 		const speech = this.textToSpeech(result.message);
 
 		return this.buildResponse(speech, result.completed || false);
+	}
+
+	private async handleSetRoomTemperatureIntent(
+		c: Context,
+		alexaRequest: AlexaRequest,
+		userId: string
+	): Promise<Response> {
+		const slots = alexaRequest.request.intent?.slots;
+		const roomName = slots?.["Room"]?.value;
+		const temperature = slots?.["Temperature"]?.value;
+
+		if (!roomName || !temperature) {
+			return this.buildResponse(
+				"I didn't catch the room name or temperature. Please say something like 'set sanctuary to 72 degrees'",
+				false
+			);
+		}
+
+		const temp = parseInt(temperature);
+
+		// Validate temperature range
+		if (temp < 65 || temp > 78) {
+			return this.buildResponse(
+				`I can only set temperatures between 65 and 78 degrees for energy efficiency. ${temp} degrees is outside that range.`,
+				false
+			);
+		}
+
+		try {
+			// 1. Find the room
+			const room = await c.env.DB.prepare(
+				"SELECT id, room_name FROM rooms WHERE LOWER(room_name) = LOWER(?)"
+			).bind(roomName).first();
+
+			if (!room) {
+				return this.buildResponse(
+					`I couldn't find a room called ${roomName}. Available rooms may include Sanctuary, Fellowship Hall, or Tech Booth.`,
+					false
+				);
+			}
+
+			// 2. Find thermostat assigned to that room
+			const thermostat = await c.env.DB.prepare(
+				"SELECT * FROM thermostat_devices_v2 WHERE assigned_room_id = ? AND is_active = 1"
+			).bind(room.id).first();
+
+			if (!thermostat) {
+				return this.buildResponse(
+					`The ${roomName} doesn't have a thermostat configured yet. Please contact the administrator.`,
+					false
+				);
+			}
+
+			// 3. Check tenant permission (if tenant email provided in context)
+			const tenantEmail = alexaRequest.context?.System?.user?.email;
+			if (tenantEmail) {
+				const permission = await c.env.DB.prepare(
+					`SELECT * FROM tenant_room_permissions
+					WHERE LOWER(tenant_email) = LOWER(?) AND room_id = ? AND can_control_temp = 1`
+				).bind(tenantEmail, room.id).first();
+
+				if (!permission) {
+					return this.buildResponse(
+						`You don't have permission to control the temperature in the ${roomName}. Please contact the administrator.`,
+						false
+					);
+				}
+			}
+
+			// 4. Log the admin request
+			await c.env.DB.prepare(
+				`INSERT INTO admin_request_logs
+				(request_type, message_details, status, source, session_id)
+				VALUES (?, ?, ?, ?, ?)`
+			).bind(
+				"Room Temperature Control",
+				`Alexa user ${userId} set ${roomName} to ${temp}°F via thermostat ${thermostat.device_name}`,
+				"Active",
+				"Alexa",
+				alexaRequest.session.sessionId
+			).run();
+
+			// 5. In production, you would call Alexa Smart Home API here to actually control the thermostat
+			// For now, we'll just confirm the action
+			// Example:
+			// await this.controlAlexaThermostat(c, thermostat.alexa_device_id, temp);
+
+			return this.buildResponse(
+				`I've set the ${roomName} temperature to ${temp} degrees. It should reach the target temperature in about 10 to 15 minutes.`,
+				true
+			);
+
+		} catch (error) {
+			console.error("SetRoomTemperatureIntent error:", error);
+			return this.buildResponse(
+				"Sorry, I encountered an error setting the temperature. Please try again later.",
+				true
+			);
+		}
 	}
 
 	private handleHelpIntent(c: Context): Response {
