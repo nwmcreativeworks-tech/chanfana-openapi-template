@@ -641,7 +641,7 @@ export class AdminDashboard {
 					<td>\${req.category}</td>
 					<td>\${req.description.substring(0, 50)}...</td>
 					<td>
-						${req.photos ? \`<button class="photo-btn-small" onclick="viewRequestPhotos(\${req.id})">📷 View</button>\` : '-'}
+						\${req.photos ? \`<button class="photo-btn-small" onclick="viewRequestPhotos(\${req.id})">📷 View</button>\` : '-'}
 					</td>
 					<td>\${req.status}</td>
 					<td>\${new Date(req.created_at).toLocaleDateString()}</td>
