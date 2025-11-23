@@ -9,6 +9,7 @@ import adminRouter from "./endpoints/admin/router";
 import { AlexaSkillHandler } from "./endpoints/alexa/alexaSkill";
 import { AlexaOAuth } from "./endpoints/alexa/oauth";
 import { AlexaSmartHomeSkillHandler } from "./endpoints/alexa/smartHomeSkill";
+import { AlexaHandler } from "./endpoints/alexa";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { cors } from "hono/cors";
@@ -70,6 +71,12 @@ openapi.post("/dummy/:slug", DummyEndpoint);
 // Alexa Skill endpoint
 app.post("/alexa", async (c) => {
 	const handler = new AlexaSkillHandler();
+	return handler.handle(c);
+});
+
+// Alexa Chat Handler (MaintenanceIntent + BuildingInfoIntent)
+app.post("/alexa/chat", async (c) => {
+	const handler = new AlexaHandler();
 	return handler.handle(c);
 });
 
