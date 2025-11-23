@@ -317,8 +317,16 @@ Respond naturally and helpfully to the tenant's message.`;
 			category = "electrical";
 		} else if (lowerMsg.match(/\b(appliance|fridge|stove|dishwasher|washer|dryer)\b/)) {
 			category = "appliance";
-		} else if (lowerMsg.match(/\b(vmix|camera|mic|microphone|hdmi|media|video)\b/)) {
+		} else if (lowerMsg.match(/\b(vmix|camera|mic|microphone|hdmi|media|video|streaming|broadcast)\b/)) {
 			category = "media_equipment";
+		} else if (lowerMsg.match(/\b(chair|seating|seat|furniture)\b/)) {
+			category = "chairs";
+		} else if (lowerMsg.match(/\b(stage|platform|riser)\b/)) {
+			category = "stage";
+		} else if (lowerMsg.match(/\b(instrument|piano|drum|guitar|keyboard|music)\b/)) {
+			category = "musical_instruments";
+		} else if (lowerMsg.match(/\b(equipment|gear|device|machine|tool)\b/)) {
+			category = "equipment";
 		}
 
 		// Detect priority
