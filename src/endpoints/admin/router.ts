@@ -59,16 +59,10 @@ async function requireAuth(c: any, next: any) {
 }
 
 // Login page (no auth required)
-adminRouter.get("/login", async (c) => {
-	const loginPage = new AdminLoginPage();
-	return loginPage.handle(c);
-});
+adminRouter.get("/login", AdminLoginPage);
 
 // Dashboard UI (client-side auth check)
-adminRouter.get("/dashboard", async (c) => {
-	const dashboard = new AdminDashboard();
-	return dashboard.handle(c);
-});
+adminRouter.get("/dashboard", AdminDashboard);
 
 // User management
 adminRouter.get("/users", AdminUsersList);

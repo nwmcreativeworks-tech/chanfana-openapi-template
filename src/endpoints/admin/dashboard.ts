@@ -1,6 +1,18 @@
+import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
+import { z } from "zod";
 
-export class AdminDashboard {
+export class AdminDashboard extends OpenAPIRoute {
+	schema: OpenAPIRouteSchema = {
+		tags: ["Admin"],
+		summary: "Admin dashboard page",
+		responses: {
+			"200": {
+				description: "Returns admin dashboard HTML page",
+			},
+		},
+	};
+
 	async handle(c: Context) {
 		const html = `<!DOCTYPE html>
 <html lang="en">
