@@ -95,7 +95,12 @@ export class ChatMessage extends OpenAPIRoute {
 			intent = await this.detectIntent(message);
 
 			// Handle special actions
-			if (intent.action === "thermostat_control" && unit_number) {
+			if (intent.action === "vmix_support") {
+				// Handle vMix/media support with knowledge base
+				const kbResult = await this.handleVmixSupport(c, message, systemPrompt, history);
+				responseText = kbResult.message;
+				actionTaken = { type: "vmix_support", details: kbResult };
+			} else if (intent.action === "thermostat_control" && unit_number) {
 				actionTaken = await this.handleThermostatControl(c, message, unit_number);
 				responseText = actionTaken.message;
 			} else if (intent.action === "maintenance_request") {
@@ -220,6 +225,15 @@ Respond naturally and helpfully to the tenant's message.`;
 	private async detectIntent(message: string): Promise<{ action: string }> {
 		const lowerMsg = message.toLowerCase();
 
+		// vMix / Media Equipment keywords - check this FIRST before general maintenance
+		if (
+			lowerMsg.match(
+				/\b(vmix|v-mix|v mix|media equipment|video|audio|sound|microphone|mic|camera|recording|streaming|broadcast|mixer|input|output|overlay|transition|title|graphics)\b/
+			)
+		) {
+			return { action: "vmix_support" };
+		}
+
 		// Thermostat keywords
 		if (
 			lowerMsg.match(
@@ -240,6 +254,62 @@ Respond naturally and helpfully to the tenant's message.`;
 		}
 
 		return { action: "general" };
+	}
+
+	private async handleVmixSupport(
+		c: Context,
+		message: string,
+		systemPrompt: string,
+		history: any[]
+	) {
+		// Search knowledge base for relevant vMix/media entries
+		const knowledgeEntries = await c.env.DB.prepare(
+			`SELECT * FROM knowledge_base
+			WHERE category IN ('vmix', 'media_equipment', 'troubleshooting')
+			OR keywords LIKE ? OR keywords LIKE ? OR keywords LIKE ?
+			OR question LIKE ? OR answer LIKE ?
+			ORDER BY created_at DESC
+			LIMIT 5`
+		).bind(
+			`%audio%`, `%video%`, `%sound%`,
+			`%${message.substring(0, 50)}%`,
+			`%${message.substring(0, 50)}%`
+		).all();
+
+		const entries = knowledgeEntries.results || [];
+
+		// Build enhanced system prompt with KB entries
+		let kbContext = "\n\n📚 **RELEVANT KNOWLEDGE BASE ENTRIES:**\n";
+		if (entries.length > 0) {
+			entries.forEach((entry: any, index: number) => {
+				kbContext += `\n${index + 1}. **${entry.question}**\n${entry.answer}\n`;
+			});
+		} else {
+			kbContext += "\nNo specific knowledge base entries found for this issue.\n";
+		}
+
+		kbContext += `\n**IMPORTANT INSTRUCTIONS:**
+- Use the knowledge base entries above to help troubleshoot the user's issue
+- Provide clear, numbered step-by-step instructions
+- After providing the solution, ask: "Did this solve your issue? If not, I can help you submit a maintenance request."
+- Be specific and reference the knowledge base information when applicable
+- If the knowledge base doesn't have relevant info, provide general troubleshooting steps and offer to submit a maintenance request\n`;
+
+		const enhancedPrompt = systemPrompt + kbContext;
+
+		// Generate AI response with KB context
+		const aiResponse = await this.generateAIResponse(
+			c,
+			enhancedPrompt,
+			history,
+			message
+		);
+
+		return {
+			message: aiResponse,
+			knowledge_entries_used: entries.length,
+			entries: entries.map((e: any) => ({ id: e.id, question: e.question }))
+		};
 	}
 
 	private async handleThermostatControl(
@@ -436,6 +506,12 @@ Respond naturally and helpfully to the tenant's message.`;
 					"Set temperature to 70°F",
 					"Make it warmer",
 					"What's the current temperature?",
+				];
+			case "vmix_support":
+				return [
+					"Yes, that solved it!",
+					"No, still having issues - submit maintenance request",
+					"Try another solution",
 				];
 			case "maintenance_request":
 				return [

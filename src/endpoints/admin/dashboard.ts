@@ -322,6 +322,7 @@ export class AdminDashboard {
 			<div class="tab active" onclick="switchTab('users')">Users</div>
 			<div class="tab" onclick="switchTab('activity')">Activity Log</div>
 			<div class="tab" onclick="switchTab('maintenance')">Maintenance</div>
+			<div class="tab" onclick="switchTab('knowledge')">Knowledge Base</div>
 		</div>
 
 		<div id="users-tab" class="tab-content active">
@@ -381,6 +382,25 @@ export class AdminDashboard {
 			</div>
 		</div>
 
+		<div id="knowledge-tab" class="tab-content">
+			<div class="card">
+				<h2>📚 Knowledge Base Management <button class="btn btn-primary" onclick="showAddKnowledgeModal()">+ Add Entry</button></h2>
+				<table id="knowledgeTable">
+					<thead>
+						<tr>
+							<th>Category</th>
+							<th>Question</th>
+							<th>Answer</th>
+							<th>Keywords</th>
+							<th>Created</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+
 		<div class="footer">
 			<p>&copy; 2025 Hospital Church of Jacksonville | Powered by <strong>NWM Creative Works</strong></p>
 		</div>
@@ -425,6 +445,43 @@ export class AdminDashboard {
 		</div>
 	</div>
 
+	<div class="modal" id="addKnowledgeModal">
+		<div class="modal-content">
+			<h2 id="knowledgeModalTitle">Add Knowledge Entry</h2>
+			<form id="addKnowledgeForm">
+				<input type="hidden" name="id" id="knowledgeId">
+				<div class="form-group">
+					<label>Category</label>
+					<select name="category" required>
+						<option value="">Select Category</option>
+						<option value="vmix">vMix / Media Equipment</option>
+						<option value="thermostat">Thermostat / HVAC</option>
+						<option value="building_info">Building Information</option>
+						<option value="governance">Building Governance</option>
+						<option value="equipment">General Equipment</option>
+						<option value="maintenance">Maintenance Procedures</option>
+						<option value="troubleshooting">Troubleshooting</option>
+						<option value="other">Other</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>Question / Topic</label>
+					<input type="text" name="question" required placeholder="e.g., How do I fix vMix audio issues?">
+				</div>
+				<div class="form-group">
+					<label>Answer / Solution</label>
+					<textarea name="answer" required rows="6" style="width: 100%; padding: 12px 16px; border: 2px solid #E1E4E8; border-radius: 8px; font-size: 15px; font-family: inherit;" placeholder="Provide detailed step-by-step solution..."></textarea>
+				</div>
+				<div class="form-group">
+					<label>Keywords (comma-separated)</label>
+					<input type="text" name="keywords" placeholder="e.g., audio, sound, microphone, recording">
+				</div>
+				<button type="submit" class="btn btn-primary">Save Entry</button>
+				<button type="button" class="btn" onclick="closeKnowledgeModal()">Cancel</button>
+			</form>
+		</div>
+	</div>
+
 	<script>
 		// Load dashboard data
 		async function loadDashboard() {
@@ -432,6 +489,7 @@ export class AdminDashboard {
 				loadUsers(),
 				loadActivity(),
 				loadMaintenance(),
+				loadKnowledge(),
 				loadStats()
 			]);
 		}
@@ -547,6 +605,90 @@ export class AdminDashboard {
 				alert('Failed to delete user');
 			}
 		}
+
+		// Knowledge Base Management
+		async function loadKnowledge() {
+			const response = await fetch('/admin/knowledge');
+			const data = await response.json();
+
+			const tbody = document.querySelector('#knowledgeTable tbody');
+			tbody.innerHTML = data.entries.map(entry => \`
+				<tr>
+					<td><span class="badge badge-active">\${entry.category}</span></td>
+					<td>\${entry.question}</td>
+					<td>\${entry.answer.substring(0, 100)}\${entry.answer.length > 100 ? '...' : ''}</td>
+					<td>\${entry.keywords || 'N/A'}</td>
+					<td>\${new Date(entry.created_at).toLocaleDateString()}</td>
+					<td>
+						<button class="btn btn-primary" onclick="editKnowledge(\${entry.id})">Edit</button>
+						<button class="btn btn-danger" onclick="deleteKnowledge(\${entry.id})">Delete</button>
+					</td>
+				</tr>
+			\`).join('');
+		}
+
+		function showAddKnowledgeModal() {
+			document.getElementById('knowledgeModalTitle').textContent = 'Add Knowledge Entry';
+			document.getElementById('addKnowledgeForm').reset();
+			document.getElementById('knowledgeId').value = '';
+			document.getElementById('addKnowledgeModal').classList.add('active');
+		}
+
+		function closeKnowledgeModal() {
+			document.getElementById('addKnowledgeModal').classList.remove('active');
+		}
+
+		async function editKnowledge(id) {
+			const response = await fetch('/admin/knowledge');
+			const data = await response.json();
+			const entry = data.entries.find(e => e.id === id);
+
+			if (entry) {
+				document.getElementById('knowledgeModalTitle').textContent = 'Edit Knowledge Entry';
+				document.getElementById('knowledgeId').value = entry.id;
+				document.querySelector('[name="category"]').value = entry.category;
+				document.querySelector('[name="question"]').value = entry.question;
+				document.querySelector('[name="answer"]').value = entry.answer;
+				document.querySelector('[name="keywords"]').value = entry.keywords || '';
+				document.getElementById('addKnowledgeModal').classList.add('active');
+			}
+		}
+
+		async function deleteKnowledge(id) {
+			if (!confirm('Are you sure you want to delete this knowledge entry?')) return;
+
+			const response = await fetch(\`/admin/knowledge/\${id}\`, { method: 'DELETE' });
+			if (response.ok) {
+				loadKnowledge();
+			} else {
+				alert('Failed to delete knowledge entry');
+			}
+		}
+
+		document.getElementById('addKnowledgeForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const formData = new FormData(e.target);
+			const data = Object.fromEntries(formData);
+			const id = data.id;
+			delete data.id;
+
+			const method = id ? 'PUT' : 'POST';
+			const url = id ? \`/admin/knowledge/\${id}\` : '/admin/knowledge';
+
+			const response = await fetch(url, {
+				method: method,
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+
+			if (response.ok) {
+				closeKnowledgeModal();
+				loadKnowledge();
+				e.target.reset();
+			} else {
+				alert('Failed to save knowledge entry');
+			}
+		});
 
 		// Load data on page load
 		loadDashboard();

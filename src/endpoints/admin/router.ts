@@ -12,6 +12,12 @@ import {
 	AdminDevicesSync,
 } from "./devices";
 import { AlexaSetupStart, AlexaSetupCallback } from "./alexaSetup";
+import {
+	AdminKnowledgeList,
+	AdminKnowledgeCreate,
+	AdminKnowledgeUpdate,
+	AdminKnowledgeDelete,
+} from "./knowledge";
 
 const adminRouter = fromHono(new Hono());
 
@@ -28,6 +34,12 @@ adminRouter.delete("/users/:id", AdminUsersDelete);
 
 // Activity log
 adminRouter.get("/activity", AdminActivityLog);
+
+// Knowledge base management
+adminRouter.get("/knowledge", AdminKnowledgeList);
+adminRouter.post("/knowledge", AdminKnowledgeCreate);
+adminRouter.put("/knowledge/:id", AdminKnowledgeUpdate);
+adminRouter.delete("/knowledge/:id", AdminKnowledgeDelete);
 
 // Thermostat device management
 adminRouter.get("/devices", AdminDevicesList);
