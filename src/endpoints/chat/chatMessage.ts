@@ -31,11 +31,12 @@ export class ChatMessage extends OpenAPIRoute {
 
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { message, session_id, tenant_name, unit_number } = data.body as {
+		const { message, session_id, tenant_name, unit_number, photos } = data.body as {
 			message: string;
 			session_id?: string;
 			tenant_name?: string;
 			unit_number?: string;
+			photos?: Array<{ name: string; data: string; type: string }>;
 		};
 
 		// Generate or use existing session ID
@@ -75,7 +76,7 @@ export class ChatMessage extends OpenAPIRoute {
 
 		// If there's an active maintenance workflow, continue it
 		if (activeDraft) {
-			const result = await maintenanceWorkflow.processStep(c, activeDraft, message);
+			const result = await maintenanceWorkflow.processStep(c, activeDraft, message, photos);
 			responseText = result.message;
 
 			if (result.completed) {
@@ -106,7 +107,7 @@ export class ChatMessage extends OpenAPIRoute {
 			} else if (intent.action === "maintenance_request") {
 				// Start guided maintenance workflow
 				const draft = await maintenanceWorkflow.getOrCreateDraft(c, sessionId, conversation.id);
-				const result = await maintenanceWorkflow.processStep(c, draft, message);
+				const result = await maintenanceWorkflow.processStep(c, draft, message, photos);
 				responseText = result.message;
 				actionTaken = { type: "maintenance_workflow_started", step: result.step, details: result };
 			} else {

@@ -737,6 +737,107 @@ app.get("/chatbot", async (c) => {
             cursor: not-allowed;
         }
 
+        /* Photo Upload Button */
+        .photo-btn {
+            padding: 14px 18px;
+            background: #F4F5F7;
+            border: 2px solid #E1E4E8;
+            border-radius: 24px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-btn:hover {
+            background: #E1E4E8;
+            border-color: #0052CC;
+        }
+
+        .photo-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Photo Preview Area */
+        .photo-preview-area {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid #E1E4E8;
+        }
+
+        .photo-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #586069;
+        }
+
+        .clear-photos-btn {
+            background: #DE350B;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-photos-btn:hover {
+            background: #BF2600;
+        }
+
+        .photo-thumbnails {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+        }
+
+        .photo-thumbnail {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #E1E4E8;
+        }
+
+        .photo-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-thumbnail .remove-photo {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(222, 53, 11, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .photo-thumbnail .remove-photo:hover {
+            background: #DE350B;
+            transform: scale(1.1);
+        }
+
         /* Footer */
         .portal-footer {
             padding: 20px 32px;
@@ -930,7 +1031,20 @@ app.get("/chatbot", async (c) => {
 
             <!-- Chat Input -->
             <div class="chat-input-area">
+                <!-- Photo Preview Area -->
+                <div id="photoPreview" class="photo-preview-area" style="display: none;">
+                    <div class="photo-preview-header">
+                        <span>📸 Photos to upload (<span id="photoCount">0</span>/3)</span>
+                        <button type="button" onclick="clearPhotos()" class="clear-photos-btn">Clear All</button>
+                    </div>
+                    <div id="photoThumbnails" class="photo-thumbnails"></div>
+                </div>
+
                 <form class="chat-input-form" id="chatForm">
+                    <input type="file" id="photoInput" accept="image/*" multiple style="display: none;" onchange="handlePhotoSelect(event)">
+                    <button type="button" class="photo-btn" id="photoBtn" onclick="document.getElementById('photoInput').click()" title="Upload photos">
+                        📷
+                    </button>
                     <input
                         type="text"
                         class="chat-input"
@@ -1014,6 +1128,80 @@ app.get("/chatbot", async (c) => {
             localStorage.setItem('unitNumber', unitNumber.value);
         });
 
+        // Photo Upload Handling
+        let selectedPhotos = [];
+        const MAX_PHOTOS = 3;
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per photo
+
+        window.handlePhotoSelect = function(event) {
+            const files = Array.from(event.target.files);
+
+            if (selectedPhotos.length + files.length > MAX_PHOTOS) {
+                alert(\`You can only upload up to \${MAX_PHOTOS} photos. Currently selected: \${selectedPhotos.length}\`);
+                return;
+            }
+
+            files.forEach(file => {
+                // Validate file size
+                if (file.size > MAX_FILE_SIZE) {
+                    alert(\`Photo "\${file.name}" is too large. Maximum size is 5MB.\`);
+                    return;
+                }
+
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert(\`File "\${file.name}" is not an image.\`);
+                    return;
+                }
+
+                // Read file as base64
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedPhotos.push({
+                        name: file.name,
+                        data: e.target.result,
+                        type: file.type
+                    });
+                    updatePhotoPreview();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Clear the input so the same file can be selected again
+            event.target.value = '';
+        };
+
+        function updatePhotoPreview() {
+            const preview = document.getElementById('photoPreview');
+            const thumbnails = document.getElementById('photoThumbnails');
+            const count = document.getElementById('photoCount');
+
+            if (selectedPhotos.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            preview.style.display = 'block';
+            count.textContent = selectedPhotos.length;
+
+            thumbnails.innerHTML = selectedPhotos.map((photo, index) => \`
+                <div class="photo-thumbnail">
+                    <img src="\${photo.data}" alt="\${photo.name}">
+                    <button type="button" class="remove-photo" onclick="removePhoto(\${index})">×</button>
+                </div>
+            \`).join('');
+        }
+
+        window.removePhoto = function(index) {
+            selectedPhotos.splice(index, 1);
+            updatePhotoPreview();
+        };
+
+        window.clearPhotos = function() {
+            selectedPhotos = [];
+            updatePhotoPreview();
+        };
+
         // Load tenant info
         if (localStorage.getItem('tenantName')) {
             tenantName.value = localStorage.getItem('tenantName');
@@ -1086,6 +1274,12 @@ app.get("/chatbot", async (c) => {
                     requestBody.session_id = sessionId;
                 }
 
+                // Include photos if any are selected
+                if (selectedPhotos.length > 0) {
+                    requestBody.photos = selectedPhotos;
+                    console.log(\`Including \${selectedPhotos.length} photo(s) with message\`);
+                }
+
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {
@@ -1119,6 +1313,11 @@ app.get("/chatbot", async (c) => {
                     addMessage('assistant', data.message, data.suggestions, data.action_taken);
                 } else {
                     addMessage('assistant', 'I received your message but had trouble generating a response. Please try again.');
+                }
+
+                // Clear photos after successful send
+                if (selectedPhotos.length > 0) {
+                    clearPhotos();
                 }
 
             } catch (error) {

@@ -30,7 +30,7 @@ export class MaintenanceWorkflow {
 	/**
 	 * Process user input and advance to next step
 	 */
-	async processStep(c: Context, draft: any, userMessage: string): Promise<{ message: string; step: number; completed: boolean }> {
+	async processStep(c: Context, draft: any, userMessage: string, photos?: Array<{ name: string; data: string; type: string }>): Promise<{ message: string; step: number; completed: boolean }> {
 		// Check for cancel command at any step
 		const lowerMsg = userMessage.toLowerCase();
 		if (lowerMsg.includes("cancel") || lowerMsg.includes("stop") || lowerMsg.includes("quit") || lowerMsg.includes("exit")) {
@@ -70,7 +70,7 @@ Is there anything else I can help you with?`,
 			case 7:
 				return await this.handleStep7(c, draft, userMessage);
 			case 8:
-				return await this.handleStep8(c, draft, userMessage);
+				return await this.handleStep8(c, draft, userMessage, photos);
 			case 10:
 				return await this.handleStep10(c, draft, userMessage);
 			case 11:
@@ -558,20 +558,54 @@ Please describe the equipment:
 	/**
 	 * STEP 8: Evidence Upload
 	 */
-	private async handleStep8(c: Context, draft: any, userMessage: string) {
+	private async handleStep8(c: Context, draft: any, userMessage: string, photos?: Array<{ name: string; data: string; type: string }>) {
 		const lowerMsg = userMessage.toLowerCase();
 
-		if (lowerMsg.includes("photos ready") || lowerMsg.includes("ready")) {
+		// Check if photos were uploaded
+		if (photos && photos.length > 0) {
+			// Store photos as JSON in photo_urls field
+			const photoData = JSON.stringify(photos);
+
 			await c.env.DB.prepare(
-				`UPDATE maintenance_request_drafts SET evidence_uploaded = 1, current_step = 10, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-			).bind(draft.id).run();
-		} else if (lowerMsg.includes("skip")) {
+				`UPDATE maintenance_request_drafts SET photo_urls = ?, evidence_uploaded = 1, current_step = 10, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+			).bind(photoData, draft.id).run();
+
+			return {
+				message: `✅ ${photos.length} photo(s) uploaded successfully!
+
+**STEP 9 OF 10: Liability Confirmation**
+
+⚖️ **IMPORTANT LEGAL ACKNOWLEDGMENT**
+
+By submitting this request, you confirm:
+
+✓ The information provided is accurate and truthful
+✓ You understand that if the issue is caused by negligence, misuse, or unauthorized activity, your organization may be financially responsible for repair or replacement
+
+**Do you agree to these terms?**
+
+Type:
+• **I AGREE** to confirm and proceed
+• **I DO NOT AGREE** to cancel this request`,
+				step: 10,
+				completed: false
+			};
+		}
+
+		if (lowerMsg.includes("skip")) {
 			await c.env.DB.prepare(
 				`UPDATE maintenance_request_drafts SET evidence_uploaded = 0, current_step = 10, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
 			).bind(draft.id).run();
 		} else {
 			return {
-				message: `Please type "PHOTOS READY" when you're ready to proceed, or "SKIP" to continue without photos.`,
+				message: `📸 **STEP 8 OF 10: Evidence Upload**
+
+Please upload 1-3 clear photos showing the issue:
+• Click the 📷 camera button below
+• Select or take photos
+• Then send this message again or type "SKIP" to continue without photos
+
+*Photos help us assess the issue faster and more accurately.*`,
 				step: 8,
 				completed: false
 			};

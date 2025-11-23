@@ -286,6 +286,46 @@ export class AdminDashboard {
 		.footer strong {
 			color: #0052CC;
 		}
+		/* Photo Gallery */
+		.photo-gallery {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+			gap: 16px;
+			margin-top: 20px;
+		}
+		.photo-gallery-item {
+			position: relative;
+			aspect-ratio: 4/3;
+			border-radius: 12px;
+			overflow: hidden;
+			border: 2px solid #E1E4E8;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+		.photo-gallery-item:hover {
+			border-color: #0052CC;
+			transform: scale(1.05);
+			box-shadow: 0 8px 24px rgba(0, 82, 204, 0.2);
+		}
+		.photo-gallery-item img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+		.photo-btn-small {
+			padding: 6px 12px;
+			background: #0052CC;
+			color: white;
+			border: none;
+			border-radius: 6px;
+			font-size: 12px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+		.photo-btn-small:hover {
+			background: #0065FF;
+		}
 	</style>
 </head>
 <body>
@@ -373,6 +413,7 @@ export class AdminDashboard {
 							<th>Tenant</th>
 							<th>Category</th>
 							<th>Description</th>
+							<th>Photos</th>
 							<th>Status</th>
 							<th>Created</th>
 						</tr>
@@ -479,6 +520,14 @@ export class AdminDashboard {
 				<button type="submit" class="btn btn-primary">Save Entry</button>
 				<button type="button" class="btn" onclick="closeKnowledgeModal()">Cancel</button>
 			</form>
+		</div>
+	</div>
+
+	<div class="modal" id="photoViewerModal">
+		<div class="modal-content" style="max-width: 800px;">
+			<h2>📸 Maintenance Request Photos</h2>
+			<div id="photoGallery" class="photo-gallery"></div>
+			<button type="button" class="btn btn-primary" onclick="closePhotoViewer()" style="margin-top: 20px;">Close</button>
 		</div>
 	</div>
 

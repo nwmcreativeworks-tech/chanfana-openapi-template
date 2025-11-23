@@ -23,12 +23,20 @@ export const Message = z.object({
 
 export type MessageType = z.infer<typeof Message>;
 
+// Photo schema
+export const Photo = z.object({
+	name: z.string(),
+	data: z.string(), // base64 encoded image
+	type: z.string(), // MIME type (e.g., "image/jpeg")
+});
+
 // Chat request schema
 export const ChatRequest = z.object({
 	message: z.string().min(1).max(2000),
 	session_id: z.string().uuid().optional(),
 	tenant_name: z.string().optional(),
 	unit_number: z.string().optional(),
+	photos: z.array(Photo).max(3).optional(),
 });
 
 export type ChatRequestType = z.infer<typeof ChatRequest>;
