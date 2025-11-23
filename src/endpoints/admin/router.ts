@@ -4,6 +4,7 @@ import { AdminUsersList, AdminUsersCreate, AdminUsersUpdate, AdminUsersDelete } 
 import { AdminActivityLog } from "./activity";
 import { AdminChatActivity } from "./chatActivity";
 import { AdminDashboard } from "./dashboard";
+import { AdminLoginPage } from "./loginPage";
 import {
 	AdminDevicesList,
 	AdminDevicesDiscover,
@@ -23,7 +24,47 @@ import { MaintenanceUpdate } from "../maintenance/maintenanceUpdate";
 
 const adminRouter = fromHono(new Hono());
 
-// Dashboard UI
+// Authentication middleware for protected routes
+async function requireAuth(c: any, next: any) {
+	const authHeader = c.req.header('Authorization');
+	const sessionToken = authHeader?.replace('Bearer ', '');
+
+	if (!sessionToken) {
+		return c.html(`
+			<!DOCTYPE html>
+			<html>
+			<head><meta http-equiv="refresh" content="0; url=/admin/login"></head>
+			<body>Redirecting to login...</body>
+			</html>
+		`);
+	}
+
+	// Verify session token
+	const session = await c.env.DB.prepare(
+		"SELECT s.*, u.role FROM user_sessions s JOIN users u ON s.user_id = u.id WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1"
+	).bind(sessionToken).first();
+
+	if (!session || session.role !== 'admin') {
+		return c.html(`
+			<!DOCTYPE html>
+			<html>
+			<head><meta http-equiv="refresh" content="0; url=/admin/login"></head>
+			<body>Redirecting to login...</body>
+			</html>
+		`);
+	}
+
+	c.set('user', session);
+	await next();
+}
+
+// Login page (no auth required)
+adminRouter.get("/login", async (c) => {
+	const loginPage = new AdminLoginPage();
+	return loginPage.handle(c);
+});
+
+// Dashboard UI (client-side auth check)
 adminRouter.get("/dashboard", async (c) => {
 	const dashboard = new AdminDashboard();
 	return dashboard.handle(c);

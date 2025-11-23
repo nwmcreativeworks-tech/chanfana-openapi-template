@@ -9,30 +9,35 @@ export class AdminDashboard {
 	<title>Admin Dashboard - Hospital Church Portal</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script>
+		// Get auth headers for all requests
+		function getAuthHeaders() {
+			const sessionToken = localStorage.getItem('session_token');
+			return sessionToken ? { 'Authorization': \`Bearer \${sessionToken}\` } : {};
+		}
+
+		// Fetch with auth headers
+		async function fetchWithAuth(url, options = {}) {
+			const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+			return fetch(url, { ...options, headers });
+		}
+
 		// Authentication check - must be logged in as admin
 		(async function checkAuth() {
-			const sessionToken = localStorage.getItem('sessionToken');
-			if (!sessionToken) {
-				window.location.href = '/login';
+			const sessionToken = localStorage.getItem('session_token');
+			const userRole = localStorage.getItem('user_role');
+			const userName = localStorage.getItem('user_name');
+
+			if (!sessionToken || userRole !== 'admin') {
+				window.location.href = '/admin/login';
 				return;
 			}
 
-			const response = await fetch('/auth/tenant/verify', {
-				headers: { 'Authorization': \`Bearer \${sessionToken}\` }
-			});
-
-			if (!response.ok) {
-				localStorage.removeItem('sessionToken');
-				window.location.href = '/login';
-				return;
-			}
-
-			const data = await response.json();
-			// Check if user is admin
-			if (data.user.role !== 'admin') {
-				alert('Access denied. Admin privileges required.');
-				window.location.href = '/chatbot';
-				return;
+			// Update header with user name if available
+			if (userName) {
+				const headerText = document.querySelector('.header-text p');
+				if (headerText) {
+					headerText.textContent = \`Welcome, \${userName} • Tenant Portal Management System\`;
+				}
 			}
 		})();
 	</script>
