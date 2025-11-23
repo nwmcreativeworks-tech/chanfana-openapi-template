@@ -58,9 +58,16 @@ export class ChatMessage extends OpenAPIRoute {
 
 		// Check for active maintenance workflow
 		const maintenanceWorkflow = new MaintenanceWorkflow();
-		const activeDraft = await c.env.DB.prepare(
-			"SELECT * FROM maintenance_request_drafts WHERE session_id = ? AND completed = 0 ORDER BY created_at DESC LIMIT 1"
-		).bind(sessionId).first();
+		let activeDraft = null;
+
+		try {
+			activeDraft = await c.env.DB.prepare(
+				"SELECT * FROM maintenance_request_drafts WHERE session_id = ? AND completed = 0 ORDER BY created_at DESC LIMIT 1"
+			).bind(sessionId).first();
+		} catch (error) {
+			// Table might not exist yet if migration hasn't run
+			console.error("Error checking maintenance drafts:", error);
+		}
 
 		let actionTaken;
 		let responseText;
