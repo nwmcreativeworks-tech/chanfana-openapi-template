@@ -31,6 +31,27 @@ export class MaintenanceWorkflow {
 	 * Process user input and advance to next step
 	 */
 	async processStep(c: Context, draft: any, userMessage: string): Promise<{ message: string; step: number; completed: boolean }> {
+		// Check for cancel command at any step
+		const lowerMsg = userMessage.toLowerCase();
+		if (lowerMsg.includes("cancel") || lowerMsg.includes("stop") || lowerMsg.includes("quit") || lowerMsg.includes("exit")) {
+			// Delete the draft
+			await c.env.DB.prepare(
+				"DELETE FROM maintenance_request_drafts WHERE id = ?"
+			).bind(draft.id).run();
+
+			return {
+				message: `❌ Maintenance request cancelled.
+
+Your information has been deleted.
+
+You can start a new request anytime by clicking the "Maintenance Requests" button or typing "I need to submit a maintenance request".
+
+Is there anything else I can help you with?`,
+				step: 1,
+				completed: true
+			};
+		}
+
 		const step = draft.current_step || 1;
 
 		switch (step) {
