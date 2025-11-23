@@ -94,6 +94,106 @@ app.post("/alexa/token", async (c) => {
 	return alexaOAuth.token(c);
 });
 
+// Privacy Policy page
+app.get("/privacy", (c) => {
+	const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Privacy Policy | Hospital Church Tenant Portal</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+			background: #f7f7f7;
+			padding: 40px 20px;
+			color: #333;
+			line-height: 1.6;
+		}
+		h1 {
+			color: #0052CC;
+			margin-bottom: 10px;
+		}
+		h3 {
+			color: #0065FF;
+			margin-top: 25px;
+		}
+		.container {
+			max-width: 900px;
+			margin: auto;
+			background: white;
+			padding: 40px;
+			border-radius: 12px;
+			box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+		}
+		ul {
+			margin: 15px 0;
+			padding-left: 25px;
+		}
+		li {
+			margin: 8px 0;
+		}
+		.back-link {
+			display: inline-block;
+			margin-top: 30px;
+			color: #0052CC;
+			text-decoration: none;
+			font-weight: 600;
+		}
+		.back-link:hover {
+			text-decoration: underline;
+		}
+	</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Privacy Policy</h1>
+<p><strong>Hospital Church Tenant Portal – Powered by NWM Creative Works</strong></p>
+
+<p>This portal collects limited information for the sole purpose of supporting authorized tenants, ministries, and guests of Hospital Church of Jacksonville.</p>
+
+<h3>Information Collected</h3>
+<ul>
+	<li>Name</li>
+	<li>Phone number and/or email</li>
+	<li>Location inside the building</li>
+	<li>Description of issue or request</li>
+	<li>Uploaded images (optional)</li>
+</ul>
+
+<h3>Usage of Information</h3>
+<ul>
+	<li>Maintenance and facility support</li>
+	<li>Media troubleshooting</li>
+	<li>Building access and security</li>
+	<li>Scheduling and event inquiries</li>
+	<li>Safety documentation</li>
+</ul>
+
+<h3>Data Protection</h3>
+<p>No data is sold, leased, or provided to third parties. Information is restricted to building management and support personnel only.</p>
+
+<h3>Consent</h3>
+<p>By using this portal, you approve the collection and limited internal use of this data in accordance with this policy.</p>
+
+<h3>Contact</h3>
+<p>
+GracePoint Services LLC<br>
+Phone: 904-293-4426<br>
+Email: gracepointservicesllc@gmail.com
+</p>
+
+<p><strong>Last Updated:</strong> November 23, 2025</p>
+
+<a href="/chatbot" class="back-link">← Back to Portal</a>
+
+</div>
+</body>
+</html>`;
+	return c.html(html);
+});
+
 // Login page
 app.get("/login", (c) => {
 	const html = `<!DOCTYPE html>
@@ -1060,7 +1160,7 @@ app.get("/chatbot", async (c) => {
 
         <!-- Footer -->
         <footer class="portal-footer">
-            <p>&copy; 2025 Hospital Church of Jacksonville | <a href="#" onclick="showPrivacy()">Privacy Policy</a> | Powered by <strong>NWM Creative Works</strong></p>
+            <p>&copy; 2025 Hospital Church of Jacksonville | <a href="/privacy" target="_blank">Privacy Policy</a> | Powered by <strong>NWM Creative Works</strong></p>
         </footer>
     </div>
 
@@ -1234,9 +1334,6 @@ app.get("/chatbot", async (c) => {
             }
         };
 
-        window.showPrivacy = function() {
-            alert('Privacy Policy: Your conversations are private and used only to provide support. Data is stored securely and never shared with third parties.');
-        };
 
         // Handle form submission
         chatForm.addEventListener('submit', async (e) => {
