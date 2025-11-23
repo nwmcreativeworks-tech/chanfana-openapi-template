@@ -81,4 +81,7 @@ ALTER TABLE maintenance_requests ADD COLUMN access_window TEXT;
 ALTER TABLE maintenance_requests ADD COLUMN onsite_contact TEXT;
 ALTER TABLE maintenance_requests ADD COLUMN access_requirements TEXT;
 ALTER TABLE maintenance_requests ADD COLUMN liability_confirmed BOOLEAN DEFAULT 0;
-ALTER TABLE maintenance_requests ADD COLUMN ticket_number TEXT UNIQUE;
+ALTER TABLE maintenance_requests ADD COLUMN ticket_number TEXT;
+
+-- Create index on ticket_number for uniqueness checking
+CREATE INDEX IF NOT EXISTS idx_maintenance_requests_ticket_number ON maintenance_requests(ticket_number);
