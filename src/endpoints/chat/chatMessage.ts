@@ -3,6 +3,7 @@ import { Context } from "hono";
 import { z } from "zod";
 import { ChatRequest, ChatResponse } from "./base";
 import { MaintenanceWorkflow } from "./maintenanceWorkflow";
+import { BuildingInfoWorkflow } from "./buildingInfoWorkflow";
 
 export class ChatMessage extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
@@ -57,6 +58,68 @@ export class ChatMessage extends OpenAPIRoute {
 			.bind(conversation.id, "user", message)
 			.run();
 
+		// ========== GLOBAL COMMAND HANDLING ==========
+		const cmd = message.toLowerCase().trim();
+
+		if (cmd === "cancel") {
+			// Cancel any active workflows
+			await this.cancelActiveWorkflows(c, sessionId);
+			const responseText = "Request cancelled. Type MENU to return to the main options.";
+			await this.saveAssistantMessage(c, conversation.id, responseText);
+			return {
+				session_id: sessionId,
+				message: responseText,
+				suggestions: this.generateSuggestions("general"),
+				action_taken: { type: "cancelled" },
+			};
+		}
+
+		if (cmd === "menu") {
+			// Cancel workflows and show menu
+			await this.cancelActiveWorkflows(c, sessionId);
+			const responseText = `How can I help you today?
+
+Choose an option:
+1. Adjust my thermostat
+2. Submit a maintenance request
+3. Help with vMix or media equipment
+4. Building information
+
+You can also type CANCEL at any time to stop.`;
+			await this.saveAssistantMessage(c, conversation.id, responseText);
+			return {
+				session_id: sessionId,
+				message: responseText,
+				suggestions: this.generateSuggestions("general"),
+				action_taken: { type: "menu" },
+			};
+		}
+
+		if (cmd === "restart") {
+			// Restart current flow - similar to cancel but with context
+			await this.cancelActiveWorkflows(c, sessionId);
+			const responseText = "Restarting... Type MENU to see all options.";
+			await this.saveAssistantMessage(c, conversation.id, responseText);
+			return {
+				session_id: sessionId,
+				message: responseText,
+				suggestions: this.generateSuggestions("general"),
+				action_taken: { type: "restart" },
+			};
+		}
+
+		// Check for active building info workflow
+		const buildingInfoWorkflow = new BuildingInfoWorkflow();
+		let activeBuildingInfo = null;
+
+		try {
+			activeBuildingInfo = await c.env.DB.prepare(
+				"SELECT * FROM building_info_states WHERE session_id = ? AND completed = 0 ORDER BY created_at DESC LIMIT 1"
+			).bind(sessionId).first();
+		} catch (error) {
+			console.error("Error checking building info states:", error);
+		}
+
 		// Check for active maintenance workflow
 		const maintenanceWorkflow = new MaintenanceWorkflow();
 		let activeDraft = null;
@@ -74,8 +137,20 @@ export class ChatMessage extends OpenAPIRoute {
 		let responseText;
 		let intent = { action: "general" }; // Default intent
 
+		// If there's an active building info workflow, continue it
+		if (activeBuildingInfo) {
+			const result = await buildingInfoWorkflow.processStep(c, activeBuildingInfo, message);
+			responseText = result.message;
+
+			if (result.completed) {
+				actionTaken = { type: "building_info_completed", details: result };
+			} else {
+				actionTaken = { type: "building_info_step", step: result.step, details: result };
+			}
+			intent = { action: "building_info" };
+		}
 		// If there's an active maintenance workflow, continue it
-		if (activeDraft) {
+		else if (activeDraft) {
 			const result = await maintenanceWorkflow.processStep(c, activeDraft, message, photos);
 			responseText = result.message;
 
@@ -104,6 +179,12 @@ export class ChatMessage extends OpenAPIRoute {
 			} else if (intent.action === "thermostat_control" && unit_number) {
 				actionTaken = await this.handleThermostatControl(c, message, unit_number);
 				responseText = actionTaken.message;
+			} else if (intent.action === "building_info") {
+				// Start building info workflow
+				const state = await buildingInfoWorkflow.getOrCreateState(c, sessionId, conversation.id);
+				const result = await buildingInfoWorkflow.processStep(c, state, message);
+				responseText = result.message;
+				actionTaken = { type: "building_info_started", step: result.step, details: result };
 			} else if (intent.action === "maintenance_request") {
 				// Start guided maintenance workflow
 				const draft = await maintenanceWorkflow.getOrCreateDraft(c, sessionId, conversation.id);
@@ -225,6 +306,17 @@ Respond naturally and helpfully to the tenant's message.`;
 
 	private async detectIntent(message: string): Promise<{ action: string }> {
 		const lowerMsg = message.toLowerCase();
+
+		// Building Info keywords
+		if (
+			lowerMsg.match(
+				/\b(building|rules|policy|policies|rent|rental|access|entry|hours|booking|sanctuary|reserve)\b/
+			) ||
+			lowerMsg.includes("building info") ||
+			lowerMsg.includes("building information")
+		) {
+			return { action: "building_info" };
+		}
 
 		// vMix / Media Equipment keywords - check this FIRST before general maintenance
 		if (
@@ -519,6 +611,12 @@ Respond naturally and helpfully to the tenant's message.`;
 					"Check my maintenance requests",
 					"What's the status of my request?",
 				];
+			case "building_info":
+				return [
+					"Building rules",
+					"Rent the sanctuary",
+					"Request building access",
+				];
 			default:
 				return [
 					"Adjust my thermostat",
@@ -527,5 +625,27 @@ Respond naturally and helpfully to the tenant's message.`;
 					"Building information",
 				];
 		}
+	}
+
+	private async cancelActiveWorkflows(c: Context, sessionId: string): Promise<void> {
+		try {
+			// Cancel any active building info workflows
+			await c.env.DB.prepare(
+				"UPDATE building_info_states SET completed = 1 WHERE session_id = ? AND completed = 0"
+			).bind(sessionId).run();
+
+			// Cancel any active maintenance drafts
+			await c.env.DB.prepare(
+				"UPDATE maintenance_request_drafts SET completed = 1 WHERE session_id = ? AND completed = 0"
+			).bind(sessionId).run();
+		} catch (error) {
+			console.error("Error cancelling workflows:", error);
+		}
+	}
+
+	private async saveAssistantMessage(c: Context, conversationId: number, message: string): Promise<void> {
+		await c.env.DB.prepare(
+			"INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)"
+		).bind(conversationId, "assistant", message).run();
 	}
 }
