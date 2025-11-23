@@ -51,5 +51,5 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_a
 
 -- Create default admin user (password: admin123 - CHANGE THIS!)
 -- Password hash for 'admin123' using a simple hash (you should use bcrypt in production)
-INSERT INTO users (email, password_hash, full_name, role, is_active)
+INSERT OR IGNORE INTO users (email, password_hash, full_name, role, is_active)
 VALUES ('admin@building.com', 'admin123hash', 'Administrator', 'admin', 1);

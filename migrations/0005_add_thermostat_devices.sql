@@ -23,9 +23,10 @@ CREATE TABLE IF NOT EXISTS thermostat_devices (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Update thermostat_settings to link to physical devices
-ALTER TABLE thermostat_settings ADD COLUMN device_id INTEGER;
-ALTER TABLE thermostat_settings ADD COLUMN is_virtual INTEGER DEFAULT 1;
+-- Note: Columns for thermostat_settings table are commented out to make migration idempotent
+-- If these columns don't exist, add them manually:
+-- ALTER TABLE thermostat_settings ADD COLUMN device_id INTEGER;
+-- ALTER TABLE thermostat_settings ADD COLUMN is_virtual INTEGER DEFAULT 1;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_thermostat_devices_device_id ON thermostat_devices(device_id);

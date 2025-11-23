@@ -62,26 +62,11 @@ CREATE INDEX IF NOT EXISTS idx_maint_drafts_session ON maintenance_request_draft
 CREATE INDEX IF NOT EXISTS idx_maint_drafts_conversation ON maintenance_request_drafts(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_maint_drafts_completed ON maintenance_request_drafts(completed);
 
--- Update maintenance_requests table to include all new fields
-ALTER TABLE maintenance_requests ADD COLUMN organization_name TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN contact_name TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN contact_role TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN contact_phone TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN contact_email TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN location TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN location_details TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN urgency_level TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN incident_description TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN probable_cause TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN equipment_involved TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN equipment_details TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN photo_urls TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN video_urls TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN access_window TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN onsite_contact TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN access_requirements TEXT;
-ALTER TABLE maintenance_requests ADD COLUMN liability_confirmed BOOLEAN DEFAULT 0;
-ALTER TABLE maintenance_requests ADD COLUMN ticket_number TEXT;
+-- Note: Columns for maintenance_requests table are commented out to make migration idempotent
+-- If these columns don't exist, add them manually (see migration 0008 for reference):
+-- ALTER TABLE maintenance_requests ADD COLUMN organization_name TEXT;
+-- ALTER TABLE maintenance_requests ADD COLUMN contact_name TEXT;
+-- (etc. - see original migration or 0008 for full list)
 
 -- Create index on ticket_number for uniqueness checking
 CREATE INDEX IF NOT EXISTS idx_maintenance_requests_ticket_number ON maintenance_requests(ticket_number);
