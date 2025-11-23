@@ -2,6 +2,7 @@ import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
 import { ChatRequest, ChatResponse } from "./base";
+import { MaintenanceWorkflow } from "./maintenanceWorkflow";
 
 export class ChatMessage extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
@@ -55,39 +56,54 @@ export class ChatMessage extends OpenAPIRoute {
 			.bind(conversation.id, "user", message)
 			.run();
 
-		// Get conversation history
-		const history = await this.getConversationHistory(c, conversation.id);
-
-		// Build system prompt with knowledge base
-		const systemPrompt = await this.buildSystemPrompt(c, unit_number);
-
-		// Detect intent and check for special actions
-		const intent = await this.detectIntent(message);
+		// Check for active maintenance workflow
+		const maintenanceWorkflow = new MaintenanceWorkflow();
+		const activeDraft = await c.env.DB.prepare(
+			"SELECT * FROM maintenance_request_drafts WHERE session_id = ? AND completed = 0 ORDER BY created_at DESC LIMIT 1"
+		).bind(sessionId).first();
 
 		let actionTaken;
 		let responseText;
 
-		// Handle special actions
-		if (intent.action === "thermostat_control" && unit_number) {
-			actionTaken = await this.handleThermostatControl(c, message, unit_number);
-			responseText = actionTaken.message;
-		} else if (intent.action === "maintenance_request") {
-			actionTaken = await this.handleMaintenanceRequest(
-				c,
-				message,
-				conversation.id,
-				tenant_name,
-				unit_number
-			);
-			responseText = actionTaken.message;
+		// If there's an active maintenance workflow, continue it
+		if (activeDraft) {
+			const result = await maintenanceWorkflow.processStep(c, activeDraft, message);
+			responseText = result.message;
+
+			if (result.completed) {
+				actionTaken = { type: "maintenance_workflow_completed", details: result };
+			} else {
+				actionTaken = { type: "maintenance_workflow_step", step: result.step, details: result };
+			}
 		} else {
-			// Generate AI response using Cloudflare Workers AI
-			responseText = await this.generateAIResponse(
-				c,
-				systemPrompt,
-				history,
-				message
-			);
+			// Get conversation history
+			const history = await this.getConversationHistory(c, conversation.id);
+
+			// Build system prompt with knowledge base
+			const systemPrompt = await this.buildSystemPrompt(c, unit_number);
+
+			// Detect intent and check for special actions
+			const intent = await this.detectIntent(message);
+
+			// Handle special actions
+			if (intent.action === "thermostat_control" && unit_number) {
+				actionTaken = await this.handleThermostatControl(c, message, unit_number);
+				responseText = actionTaken.message;
+			} else if (intent.action === "maintenance_request") {
+				// Start guided maintenance workflow
+				const draft = await maintenanceWorkflow.getOrCreateDraft(c, sessionId, conversation.id);
+				const result = await maintenanceWorkflow.processStep(c, draft, message);
+				responseText = result.message;
+				actionTaken = { type: "maintenance_workflow_started", step: result.step, details: result };
+			} else {
+				// Generate AI response using Cloudflare Workers AI
+				responseText = await this.generateAIResponse(
+					c,
+					systemPrompt,
+					history,
+					message
+				);
+			}
 		}
 
 		// Save assistant response
