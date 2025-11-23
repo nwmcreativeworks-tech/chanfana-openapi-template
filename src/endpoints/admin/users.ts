@@ -87,6 +87,96 @@ export class AdminUsersCreate extends OpenAPIRoute {
 	}
 }
 
+export class AdminUsersUpdate extends OpenAPIRoute {
+	schema: OpenAPIRouteSchema = {
+		tags: ["Admin"],
+		summary: "Update a user",
+		request: {
+			params: z.object({
+				id: z.string(),
+			}),
+			body: {
+				content: {
+					"application/json": {
+						schema: z.object({
+							email: z.string().email().optional(),
+							password: z.string().min(6).optional(),
+							full_name: z.string().optional(),
+							unit_number: z.string().optional(),
+							role: z.enum(["admin", "tenant", "maintenance"]).optional(),
+						}),
+					},
+				},
+			},
+		},
+		responses: {
+			"200": {
+				description: "User updated successfully",
+			},
+		},
+	};
+
+	async handle(c: Context) {
+		const data = await this.getValidatedData<typeof this.schema>();
+		const { id } = data.params as { id: string };
+		const updates = data.body as {
+			email?: string;
+			password?: string;
+			full_name?: string;
+			unit_number?: string;
+			role?: string;
+		};
+
+		// Check if user exists
+		const user = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?")
+			.bind(id)
+			.first();
+
+		if (!user) {
+			return c.json({ error: "User not found" }, 404);
+		}
+
+		// Build update query dynamically
+		const updateFields = [];
+		const values = [];
+
+		if (updates.full_name) {
+			updateFields.push("full_name = ?");
+			values.push(updates.full_name);
+		}
+		if (updates.email) {
+			updateFields.push("email = ?");
+			values.push(updates.email);
+		}
+		if (updates.password) {
+			updateFields.push("password_hash = ?");
+			values.push(updates.password); // Store as-is for church use
+		}
+		if (updates.unit_number !== undefined) {
+			updateFields.push("unit_number = ?");
+			values.push(updates.unit_number || null);
+		}
+		if (updates.role) {
+			updateFields.push("role = ?");
+			values.push(updates.role);
+		}
+
+		if (updateFields.length > 0) {
+			values.push(id);
+			await c.env.DB.prepare(
+				`UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`
+			).bind(...values).run();
+
+			// Log activity
+			await c.env.DB.prepare(
+				"INSERT INTO activity_log (user_name, action_type, action_description) VALUES (?, ?, ?)"
+			).bind("Admin", "user_updated", `User updated: ${updates.full_name || user.full_name}`).run();
+		}
+
+		return { success: true, message: "User updated successfully" };
+	}
+}
+
 export class AdminUsersDelete extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
 		tags: ["Admin"],

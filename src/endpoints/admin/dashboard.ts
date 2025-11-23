@@ -360,6 +360,7 @@ export class AdminDashboard {
 
 		<div class="tabs">
 			<div class="tab active" onclick="switchTab('users')">Users</div>
+			<div class="tab" onclick="switchTab('chatActivity')">Chatbot Activity</div>
 			<div class="tab" onclick="switchTab('activity')">Activity Log</div>
 			<div class="tab" onclick="switchTab('maintenance')">Maintenance</div>
 			<div class="tab" onclick="switchTab('knowledge')">Knowledge Base</div>
@@ -378,6 +379,26 @@ export class AdminDashboard {
 							<th>Status</th>
 							<th>Last Login</th>
 							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+
+		<div id="chatActivity-tab" class="tab-content">
+			<div class="card">
+				<h2>💬 Chatbot Activity</h2>
+				<p style="color: #586069; margin-bottom: 16px;">See what questions tenants are asking and identify common issues</p>
+				<table id="chatActivityTable">
+					<thead>
+						<tr>
+							<th>Time</th>
+							<th>User</th>
+							<th>Auditorium</th>
+							<th>Question</th>
+							<th>Response</th>
+							<th>Intent</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -416,6 +437,7 @@ export class AdminDashboard {
 							<th>Photos</th>
 							<th>Status</th>
 							<th>Created</th>
+							<th>Assigned To</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -449,23 +471,25 @@ export class AdminDashboard {
 
 	<div class="modal" id="addUserModal">
 		<div class="modal-content">
-			<h2>Add New User</h2>
+			<h2 id="userModalTitle">Add New User</h2>
 			<form id="addUserForm">
+				<input type="hidden" name="id" id="userId">
 				<div class="form-group">
 					<label>Full Name</label>
-					<input type="text" name="full_name" required>
+					<input type="text" name="full_name" id="userFullName" required>
 				</div>
 				<div class="form-group">
 					<label>Email</label>
-					<input type="email" name="email" required>
+					<input type="email" name="email" id="userEmail" required>
 				</div>
 				<div class="form-group">
 					<label>Password</label>
-					<input type="password" name="password" required>
+					<input type="password" name="password" id="userPassword">
+					<small style="color: #586069;">Leave blank to keep existing password when editing</small>
 				</div>
 				<div class="form-group">
 					<label>Auditorium Name</label>
-					<select name="unit_number">
+					<select name="unit_number" id="userUnitNumber">
 						<option value="">Select Auditorium</option>
 						<option value="Inspiration Studio">Inspiration Studio</option>
 						<option value="Harmony Hall">Harmony Hall</option>
@@ -474,7 +498,7 @@ export class AdminDashboard {
 				</div>
 				<div class="form-group">
 					<label>Role</label>
-					<select name="role">
+					<select name="role" id="userRole">
 						<option value="tenant">Tenant</option>
 						<option value="maintenance">Maintenance</option>
 						<option value="admin">Admin</option>
@@ -536,6 +560,7 @@ export class AdminDashboard {
 		async function loadDashboard() {
 			await Promise.all([
 				loadUsers(),
+				loadChatActivity(),
 				loadActivity(),
 				loadMaintenance(),
 				loadKnowledge(),
@@ -559,8 +584,27 @@ export class AdminDashboard {
 					<td><span class="badge badge-\${user.is_active ? 'active' : 'inactive'}">\${user.is_active ? 'Active' : 'Inactive'}</span></td>
 					<td>\${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
 					<td>
+						<button class="btn btn-primary" onclick="editUser(\${user.id})">Edit</button>
 						<button class="btn btn-danger" onclick="deleteUser(\${user.id})">Delete</button>
 					</td>
+				</tr>
+			\`).join('');
+		}
+
+		async function loadChatActivity() {
+			// Fetch recent chat messages
+			const response = await fetch('/admin/chat-activity');
+			const data = await response.json();
+
+			const tbody = document.querySelector('#chatActivityTable tbody');
+			tbody.innerHTML = data.messages.map(msg => \`
+				<tr>
+					<td>\${new Date(msg.created_at).toLocaleString()}</td>
+					<td>\${msg.tenant_name || 'Anonymous'}</td>
+					<td>\${msg.unit_number || '-'}</td>
+					<td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">\${msg.user_message || '-'}</td>
+					<td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">\${msg.assistant_message ? msg.assistant_message.substring(0, 100) + '...' : '-'}</td>
+					<td><span class="badge badge-active">\${msg.intent || 'general'}</span></td>
 				</tr>
 			\`).join('');
 		}
@@ -582,7 +626,9 @@ export class AdminDashboard {
 
 		async function loadMaintenance() {
 			const response = await fetch('/maintenance');
+			const usersResponse = await fetch('/admin/users');
 			const data = await response.json();
+			const usersData = await usersResponse.json();
 
 			document.getElementById('openRequests').textContent = data.requests.filter(r => r.status === 'open').length;
 
@@ -594,10 +640,38 @@ export class AdminDashboard {
 					<td>\${req.tenant_name}</td>
 					<td>\${req.category}</td>
 					<td>\${req.description.substring(0, 50)}...</td>
+					<td>
+						${req.photos ? \`<button class="photo-btn-small" onclick="viewRequestPhotos(\${req.id})">📷 View</button>\` : '-'}
+					</td>
 					<td>\${req.status}</td>
 					<td>\${new Date(req.created_at).toLocaleDateString()}</td>
+					<td>
+						<select onchange="assignRequest(\${req.id}, this.value)" style="padding: 6px; border-radius: 6px; border: 1px solid #E1E4E8;">
+							<option value="">Assign to...</option>
+							\${usersData.users.filter(u => u.role === 'maintenance' || u.role === 'admin').map(u => \`
+								<option value="\${u.id}" \${req.assigned_to === u.id ? 'selected' : ''}>\${u.full_name}</option>
+							\`).join('')}
+						</select>
+					</td>
 				</tr>
 			\`).join('');
+		}
+
+		async function assignRequest(requestId, userId) {
+			if (!userId) return;
+
+			const response = await fetch(\`/admin/maintenance/\${requestId}/assign\`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ assigned_to: userId })
+			});
+
+			if (response.ok) {
+				loadMaintenance();
+				alert('Request assigned successfully');
+			} else {
+				alert('Failed to assign request');
+			}
 		}
 
 		async function loadStats() {
@@ -617,7 +691,30 @@ export class AdminDashboard {
 		}
 
 		function showAddUserModal() {
+			document.getElementById('userModalTitle').textContent = 'Add New User';
+			document.getElementById('addUserForm').reset();
+			document.getElementById('userId').value = '';
+			document.getElementById('userPassword').required = true;
 			document.getElementById('addUserModal').classList.add('active');
+		}
+
+		async function editUser(userId) {
+			// Fetch user data
+			const response = await fetch('/admin/users');
+			const data = await response.json();
+			const user = data.users.find(u => u.id === userId);
+
+			if (user) {
+				document.getElementById('userModalTitle').textContent = 'Edit User';
+				document.getElementById('userId').value = user.id;
+				document.getElementById('userFullName').value = user.full_name;
+				document.getElementById('userEmail').value = user.email;
+				document.getElementById('userUnitNumber').value = user.unit_number || '';
+				document.getElementById('userRole').value = user.role;
+				document.getElementById('userPassword').value = '';
+				document.getElementById('userPassword').required = false;
+				document.getElementById('addUserModal').classList.add('active');
+			}
 		}
 
 		function closeModal() {
@@ -628,9 +725,19 @@ export class AdminDashboard {
 			e.preventDefault();
 			const formData = new FormData(e.target);
 			const data = Object.fromEntries(formData);
+			const userId = data.id;
+			delete data.id;
 
-			const response = await fetch('/admin/users', {
-				method: 'POST',
+			// Remove password if empty (for edit)
+			if (!data.password) {
+				delete data.password;
+			}
+
+			const method = userId ? 'PUT' : 'POST';
+			const url = userId ? \`/admin/users/\${userId}\` : '/admin/users';
+
+			const response = await fetch(url, {
+				method: method,
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
 			});
@@ -640,7 +747,7 @@ export class AdminDashboard {
 				loadUsers();
 				e.target.reset();
 			} else {
-				alert('Failed to add user');
+				alert(\`Failed to \${userId ? 'update' : 'add'} user\`);
 			}
 		});
 

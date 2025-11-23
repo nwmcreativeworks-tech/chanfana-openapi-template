@@ -40,7 +40,7 @@ export class MaintenanceUpdate extends OpenAPIRoute {
 	async handle(c: Context) {
 		const data = await this.getValidatedData<typeof this.schema>();
 		const { id } = data.params as { id: string };
-		const { status, priority } = data.body as { status?: string; priority?: string };
+		const { status, priority, assigned_to } = data.body as { status?: string; priority?: string; assigned_to?: number };
 
 		// Check if request exists
 		const existing = await c.env.DB.prepare(
@@ -76,6 +76,11 @@ export class MaintenanceUpdate extends OpenAPIRoute {
 		if (priority) {
 			updates.push("priority = ?");
 			params.push(priority);
+		}
+
+		if (assigned_to !== undefined) {
+			updates.push("assigned_to = ?");
+			params.push(assigned_to);
 		}
 
 		updates.push("updated_at = CURRENT_TIMESTAMP");

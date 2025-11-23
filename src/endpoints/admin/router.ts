@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { fromHono } from "chanfana";
-import { AdminUsersList, AdminUsersCreate, AdminUsersDelete } from "./users";
+import { AdminUsersList, AdminUsersCreate, AdminUsersUpdate, AdminUsersDelete } from "./users";
 import { AdminActivityLog } from "./activity";
+import { AdminChatActivity } from "./chatActivity";
 import { AdminDashboard } from "./dashboard";
 import {
 	AdminDevicesList,
@@ -18,6 +19,7 @@ import {
 	AdminKnowledgeUpdate,
 	AdminKnowledgeDelete,
 } from "./knowledge";
+import { MaintenanceUpdate } from "../maintenance/maintenanceUpdate";
 
 const adminRouter = fromHono(new Hono());
 
@@ -30,16 +32,23 @@ adminRouter.get("/dashboard", async (c) => {
 // User management
 adminRouter.get("/users", AdminUsersList);
 adminRouter.post("/users", AdminUsersCreate);
+adminRouter.put("/users/:id", AdminUsersUpdate);
 adminRouter.delete("/users/:id", AdminUsersDelete);
 
 // Activity log
 adminRouter.get("/activity", AdminActivityLog);
+
+// Chat activity tracking
+adminRouter.get("/chat-activity", AdminChatActivity);
 
 // Knowledge base management
 adminRouter.get("/knowledge", AdminKnowledgeList);
 adminRouter.post("/knowledge", AdminKnowledgeCreate);
 adminRouter.put("/knowledge/:id", AdminKnowledgeUpdate);
 adminRouter.delete("/knowledge/:id", AdminKnowledgeDelete);
+
+// Maintenance task assignment
+adminRouter.put("/maintenance/:id/assign", MaintenanceUpdate);
 
 // Thermostat device management
 adminRouter.get("/devices", AdminDevicesList);
