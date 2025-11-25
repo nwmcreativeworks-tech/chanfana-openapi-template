@@ -115,13 +115,13 @@ export class OAuthToken extends OpenAPIRoute {
 				if (user.role === 'admin' || user.role === 'sub_admin') {
 					// Admins get ALL thermostats
 					thermostats = await c.env.DB.prepare(`
-						SELECT id, device_name, room_name, alexa_endpoint_id as alexa_device_id
+						SELECT id, device_name, friendly_name, alexa_endpoint_id as alexa_device_id
 						FROM thermostat_devices
 					`).all();
 				} else {
 					// Tenants only get assigned thermostats
 					thermostats = await c.env.DB.prepare(`
-						SELECT td.id, td.device_name, td.room_name, td.alexa_endpoint_id as alexa_device_id
+						SELECT td.id, td.device_name, td.friendly_name, td.alexa_endpoint_id as alexa_device_id
 						FROM user_thermostat_permissions utp
 						JOIN thermostat_devices td ON td.id = utp.thermostat_id
 						WHERE utp.user_id = ?
@@ -136,7 +136,7 @@ export class OAuthToken extends OpenAPIRoute {
 					thermostats: (thermostats.results || []).map((t: any) => ({
 						id: t.id,
 						device_name: t.device_name,
-						room_name: t.room_name,
+						friendly_name: t.friendly_name,
 						alexa_device_id: t.alexa_device_id
 					})),
 					exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
@@ -212,13 +212,13 @@ export class OAuthToken extends OpenAPIRoute {
 				if (user.role === 'admin' || user.role === 'sub_admin') {
 					// Admins get ALL thermostats
 					thermostats = await c.env.DB.prepare(`
-						SELECT id, device_name, room_name, alexa_endpoint_id as alexa_device_id
+						SELECT id, device_name, friendly_name, alexa_endpoint_id as alexa_device_id
 						FROM thermostat_devices
 					`).all();
 				} else {
 					// Tenants only get assigned thermostats
 					thermostats = await c.env.DB.prepare(`
-						SELECT td.id, td.device_name, td.room_name, td.alexa_endpoint_id as alexa_device_id
+						SELECT td.id, td.device_name, td.friendly_name, td.alexa_endpoint_id as alexa_device_id
 						FROM user_thermostat_permissions utp
 						JOIN thermostat_devices td ON td.id = utp.thermostat_id
 						WHERE utp.user_id = ?
@@ -233,7 +233,7 @@ export class OAuthToken extends OpenAPIRoute {
 					thermostats: (thermostats.results || []).map((t: any) => ({
 						id: t.id,
 						device_name: t.device_name,
-						room_name: t.room_name,
+						friendly_name: t.friendly_name,
 						alexa_device_id: t.alexa_device_id
 					})),
 					exp: Math.floor(Date.now() / 1000) + 3600,

@@ -169,7 +169,7 @@ export class AlexaSmartHomeSkillHandler {
 		).all();
 
 		const endpoints = thermostats.results.map((device: any) => ({
-			endpointId: device.device_id,
+			endpointId: device.alexa_endpoint_id || device.device_id,
 			manufacturerName: device.manufacturer || "Amazon",
 			friendlyName: device.friendly_name,
 			description: `Thermostat for ${device.friendly_name}`,
@@ -245,8 +245,8 @@ export class AlexaSmartHomeSkillHandler {
 
 		// Get device from database
 		const device = await c.env.DB.prepare(
-			"SELECT * FROM thermostat_devices WHERE device_id = ?"
-		).bind(endpointId).first();
+			"SELECT * FROM thermostat_devices WHERE alexa_endpoint_id = ? OR device_id = ?"
+		).bind(endpointId, endpointId).first();
 
 		if (!device) {
 			return c.json(this.errorResponse("NO_SUCH_ENDPOINT", "Device not found"));
@@ -268,8 +268,8 @@ export class AlexaSmartHomeSkillHandler {
 
 			// Update database
 			await c.env.DB.prepare(
-				"UPDATE thermostat_devices SET target_temperature = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?"
-			).bind(targetTemp, endpointId).run();
+				"UPDATE thermostat_devices SET target_temperature = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+			).bind(targetTemp, device.id).run();
 
 			// Log activity
 			await c.env.DB.prepare(
@@ -286,15 +286,15 @@ export class AlexaSmartHomeSkillHandler {
 			targetTemp = (device.target_temperature || 72) + delta;
 
 			await c.env.DB.prepare(
-				"UPDATE thermostat_devices SET target_temperature = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?"
-			).bind(targetTemp, endpointId).run();
+				"UPDATE thermostat_devices SET target_temperature = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+			).bind(targetTemp, device.id).run();
 
 		} else if (name === "SetThermostatMode") {
 			mode = payload.thermostatMode.value;
 
 			await c.env.DB.prepare(
-				"UPDATE thermostat_devices SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?"
-			).bind(mode, endpointId).run();
+				"UPDATE thermostat_devices SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+			).bind(mode, device.id).run();
 		}
 
 		// Return success response
@@ -339,15 +339,30 @@ export class AlexaSmartHomeSkillHandler {
 	/**
 	 * Handle power control (turn on/off)
 	 */
-	private async handlePowerControl(c: Context, directive: any) {
+	private async handlePowerControl(c: Context, directive: any, userId: number | null, authorizedThermostats: any[]) {
 		const endpointId = directive.endpoint.endpointId;
 		const name = directive.header.name;
+
+		// Get device from database
+		const device = await c.env.DB.prepare(
+			"SELECT * FROM thermostat_devices WHERE alexa_endpoint_id = ? OR device_id = ?"
+		).bind(endpointId, endpointId).first();
+
+		if (!device) {
+			return c.json(this.errorResponse("NO_SUCH_ENDPOINT", "Device not found"));
+		}
+
+		// Check permission
+		const hasPermission = authorizedThermostats.some((t: any) => t.id === device.id);
+		if (!hasPermission) {
+			return c.json(this.errorResponse("NOT_SUPPORTED_IN_CURRENT_MODE", "You don't have permission to control this thermostat"));
+		}
 
 		const mode = name === "TurnOn" ? "AUTO" : "OFF";
 
 		await c.env.DB.prepare(
-			"UPDATE thermostat_devices SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?"
-		).bind(mode, endpointId).run();
+			"UPDATE thermostat_devices SET mode = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+		).bind(mode, device.id).run();
 
 		return c.json({
 			event: {
@@ -369,12 +384,12 @@ export class AlexaSmartHomeSkillHandler {
 	/**
 	 * Handle state report request
 	 */
-	private async handleStateReport(c: Context, directive: any) {
+	private async handleStateReport(c: Context, directive: any, userId: number | null, authorizedThermostats: any[]) {
 		const endpointId = directive.endpoint.endpointId;
 
 		const device = await c.env.DB.prepare(
-			"SELECT * FROM thermostat_devices WHERE device_id = ?"
-		).bind(endpointId).first();
+			"SELECT * FROM thermostat_devices WHERE alexa_endpoint_id = ? OR device_id = ?"
+		).bind(endpointId, endpointId).first();
 
 		if (!device) {
 			return this.errorResponse("NO_SUCH_ENDPOINT", "Device not found");
