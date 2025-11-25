@@ -50,10 +50,31 @@ export class GetThermostatsApi extends OpenAPIRoute {
 }
 
 // POST /admin/api/thermostats
+// NOTE: Thermostats are created via Alexa sync, not manually
+// This endpoint is disabled - admins can only update room_name and assign users
 export class CreateThermostatApi extends OpenAPIRoute {
 	schema = {
 		tags: ["Admin - Thermostats API"],
-		summary: "Create a new thermostat device",
+		summary: "Create thermostat (disabled - use Alexa sync instead)",
+		responses: {
+			403: { description: "Thermostats must be synced from Alexa" },
+		},
+	};
+
+	async handle(c: Context) {
+		return c.json({
+			success: false,
+			error: "Thermostats cannot be created manually. Use Alexa device sync to import thermostats.",
+		}, 403);
+	}
+}
+
+// PUT /admin/api/thermostats/:id
+// Admins can only rename the room - device details are managed by Alexa sync
+export class UpdateThermostatApi extends OpenAPIRoute {
+	schema = {
+		tags: ["Admin - Thermostats API"],
+		summary: "Update thermostat room name",
 		request: {
 			body: {
 				content: {
@@ -62,61 +83,43 @@ export class CreateThermostatApi extends OpenAPIRoute {
 							type: "object",
 							properties: {
 								room_name: { type: "string" },
-								device_name: { type: "string" },
-								alexa_endpoint_id: { type: "string" },
 							},
-							required: ["room_name", "device_name"],
+							required: ["room_name"],
 						},
 					},
 				},
 			},
 		},
 		responses: {
-			201: { description: "Thermostat created" },
-		},
-	};
-
-	async handle(c: Context) {
-		const body = await c.req.json();
-		const { room_name, device_name, alexa_endpoint_id } = body;
-
-		const result = await c.env.DB.prepare(
-			`INSERT INTO thermostat_devices (room_name, device_name, alexa_endpoint_id)
-			VALUES (?, ?, ?)
-			RETURNING *`
-		).bind(room_name, device_name, alexa_endpoint_id || null).first();
-
-		return c.json({
-			success: true,
-			thermostat: result,
-		}, 201);
-	}
-}
-
-// PUT /admin/api/thermostats/:id
-export class UpdateThermostatApi extends OpenAPIRoute {
-	schema = {
-		tags: ["Admin - Thermostats API"],
-		summary: "Update thermostat details",
-		responses: {
-			200: { description: "Thermostat updated" },
+			200: { description: "Room name updated" },
 		},
 	};
 
 	async handle(c: Context) {
 		const id = c.req.param("id");
 		const body = await c.req.json();
-		const { room_name, device_name, alexa_endpoint_id } = body;
+		const { room_name } = body;
 
 		await c.env.DB.prepare(
 			`UPDATE thermostat_devices
-			SET room_name = ?, device_name = ?, alexa_endpoint_id = ?, updated_at = CURRENT_TIMESTAMP
+			SET room_name = ?, updated_at = CURRENT_TIMESTAMP
 			WHERE id = ?`
-		).bind(room_name, device_name, alexa_endpoint_id || null, id).run();
+		).bind(room_name, id).run();
+
+		// Log the change
+		await c.env.DB.prepare(
+			`INSERT INTO admin_request_logs (request_type, message_details, status, source)
+			VALUES (?, ?, ?, ?)`
+		).bind(
+			"Thermostat Room Rename",
+			`Room renamed for thermostat ${id} to: ${room_name}`,
+			"Updated",
+			"Admin Panel"
+		).run();
 
 		return c.json({
 			success: true,
-			message: "Thermostat updated successfully",
+			message: "Room name updated successfully",
 		});
 	}
 }

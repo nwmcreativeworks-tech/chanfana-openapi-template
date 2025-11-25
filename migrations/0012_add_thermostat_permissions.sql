@@ -1,20 +1,9 @@
--- Migration: Add thermostat devices and user permissions
+-- Migration: Add thermostat permissions system
 -- Created: 2025-11-25
--- This migration is fully idempotent
+-- EXTENDS existing thermostat_devices table (does NOT recreate it)
 
--- Ensure thermostat_devices table exists
-CREATE TABLE IF NOT EXISTS thermostat_devices (
-    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    alexa_endpoint_id TEXT,
-    device_name TEXT,
-    room_name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Add indexes for thermostat_devices
-CREATE INDEX IF NOT EXISTS idx_thermostat_devices_room ON thermostat_devices(room_name);
-CREATE INDEX IF NOT EXISTS idx_thermostat_devices_endpoint ON thermostat_devices(alexa_endpoint_id);
+-- NOTE: thermostat_devices already exists with full schema from migration 0005
+-- We only need to add user_thermostat_permissions table
 
 -- Create user-thermostat permissions join table
 CREATE TABLE IF NOT EXISTS user_thermostat_permissions (
@@ -39,11 +28,5 @@ ON user_thermostat_permissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_thermostat_thermostat
 ON user_thermostat_permissions(thermostat_id);
 
--- Insert default thermostat devices for Hospital Church rooms
-INSERT OR IGNORE INTO thermostat_devices (id, device_name, room_name, alexa_endpoint_id)
-VALUES
-    (1, 'Sanctuary Thermostat', 'Sanctuary', NULL),
-    (2, 'Fellowship Hall Thermostat', 'Fellowship Hall', NULL),
-    (3, 'Tech Booth Thermostat', 'Tech Booth', NULL),
-    (4, 'Office Suite Thermostat', 'Office Suite', NULL),
-    (5, 'Green Room Thermostat', 'Green Room', NULL);
+-- Add index for existing thermostat_devices columns (if not exist)
+CREATE INDEX IF NOT EXISTS idx_thermostat_devices_endpoint ON thermostat_devices(alexa_endpoint_id);
