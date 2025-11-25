@@ -44,6 +44,9 @@ import {
 	UploadServicePhotosApi,
 	GetTenantServicePhotosApi,
 } from "./endpoints/tenant/servicePhotosApi";
+import { TenantPortal } from "./endpoints/tenant/portal";
+import { TenantMessagesPage } from "./endpoints/tenant/messagesPage";
+import { TenantPhotosPage } from "./endpoints/tenant/photosPage";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { cors } from "hono/cors";
@@ -174,6 +177,11 @@ openapi.post("/tenant/api/messages/:id/read", MarkMessageReadApi);
 // Tenant Service Photos API
 openapi.post("/tenant/api/service-photos", UploadServicePhotosApi);
 openapi.get("/tenant/api/service-photos", GetTenantServicePhotosApi);
+
+// Tenant Portal Pages
+openapi.get("/portal", TenantPortal);
+openapi.get("/portal/messages", TenantMessagesPage);
+openapi.get("/portal/photos", TenantPhotosPage);
 
 // Privacy Policy page
 app.get("/privacy", (c) => {
@@ -511,6 +519,9 @@ app.get("/login", (c) => {
         </div>
 
         <div class="login-footer">
+            <p style="text-align: center; margin-bottom: 12px;">
+                <a href="/admin/login" style="color: #0052CC; text-decoration: none; font-weight: 600;">Admin & Sub Admin Login →</a>
+            </p>
             <p>&copy; 2025 Hospital Church of Jacksonville | Powered by <strong>NWM Creative Works</strong></p>
         </div>
     </div>
@@ -543,11 +554,13 @@ app.get("/login", (c) => {
 
                 if (response.ok && data.success) {
                     // Store session token
-                    localStorage.setItem('sessionToken', data.session_token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('session_token', data.session_token);
+                    localStorage.setItem('user_role', data.user.role);
+                    localStorage.setItem('user_name', data.user.full_name);
+                    localStorage.setItem('user_id', data.user.id);
 
-                    // Redirect to chatbot
-                    window.location.href = '/chatbot';
+                    // Redirect to tenant portal
+                    window.location.href = '/portal';
                 } else {
                     errorMessage.textContent = data.error || 'Login failed. Please try again.';
                     errorMessage.classList.add('show');
