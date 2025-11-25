@@ -82,17 +82,108 @@ app.onError((err, c) => {
   );
 });
 
-// Setup OpenAPI registry
-const openapi = fromHono(app, {
-  docs_url: "/",
-  schema: {
-    info: {
-      title: "Tenant Support Chatbot API",
-      version: "1.0.0",
-      description: "AI-powered tenant support system with thermostat control, maintenance requests, and vMix troubleshooting. Built with Cloudflare Workers AI - completely FREE!",
-    },
-  },
+// ============================================================================
+// CRITICAL ROUTES - Registered BEFORE OpenAPI to avoid middleware conflicts
+// ============================================================================
+
+// Health check endpoint - ALWAYS returns 200
+app.get("/health", (c) => {
+	try {
+		const status = {
+			status: "ok",
+			timestamp: new Date().toISOString(),
+			services: {
+				database: !!c.env.DB ? "available" : "unavailable",
+				ai: !!c.env.AI ? "available" : "unavailable",
+				jwt_secret: !!c.env.JWT_SECRET ? "configured" : "using_default",
+			}
+		};
+		return c.json(status, 200);
+	} catch (error) {
+		return c.json({ status: "error", message: String(error) }, 200); // Still return 200 for health check
+	}
 });
+
+// Debug endpoint - Shows all registered routes and environment status
+app.get("/debug", (c) => {
+	try {
+		const routes = app.routes.map(r => ({
+			method: r.method,
+			path: r.path,
+		}));
+
+		return c.json({
+			environment: "production",
+			routes_count: routes.length,
+			sample_routes: routes.slice(0, 20),
+			services: {
+				DB: !!c.env.DB,
+				AI: !!c.env.AI,
+				JWT_SECRET: !!c.env.JWT_SECRET,
+			},
+			timestamp: new Date().toISOString(),
+		});
+	} catch (error) {
+		return c.json({ error: String(error) }, 500);
+	}
+});
+
+// Alexa endpoint - Must respond to GET for health checks from Amazon
+app.get("/alexa", (c) => {
+	return c.json({
+		status: "ok",
+		message: "Alexa Smart Home endpoint is available. Use POST for directives."
+	}, 200);
+});
+
+app.get("/alexa/smarthome", (c) => {
+	return c.json({
+		status: "ok",
+		message: "Alexa Smart Home endpoint is available. Use POST for directives."
+	}, 200);
+});
+
+app.get("/alexa/smart-home", (c) => {
+	return c.json({
+		status: "ok",
+		message: "Alexa Smart Home endpoint is available. Use POST for directives."
+	}, 200);
+});
+
+// ============================================================================
+// SAFE OpenAPI Setup with Fallback
+// ============================================================================
+
+let openapi: any;
+try {
+	openapi = fromHono(app, {
+		docs_url: "/",
+		schema: {
+			info: {
+				title: "Tenant Support Chatbot API",
+				version: "1.0.0",
+				description: "AI-powered tenant support system with thermostat control, maintenance requests, and vMix troubleshooting. Built with Cloudflare Workers AI - completely FREE!",
+			},
+		},
+	});
+} catch (error) {
+	console.error("OpenAPI setup failed:", error);
+	// Fallback: use plain Hono app if OpenAPI fails
+	openapi = app;
+
+	// Add a minimal openapi.json endpoint
+	app.get("/openapi.json", (c) => {
+		return c.json({
+			openapi: "3.0.0",
+			info: {
+				title: "Tenant Support Chatbot API",
+				version: "1.0.0",
+				description: "OpenAPI specification temporarily unavailable"
+			},
+			paths: {}
+		});
+	});
+}
 
 // Register Chatbot routers
 openapi.route("/chat", chatRouter);
@@ -1545,8 +1636,11 @@ app.get("/chatbot", async (c) => {
             messageDiv.className = \`message \${role}\`;
 
             const avatar = role === 'user' ? '👤' : '🤖';
-            // Escape newlines in content
-            const formattedContent = String(content).replace(/\\n/g, '<br>');
+
+            // SAFE: Handle undefined/null content
+            const safeContent = content ?? '';
+            const formattedContent = String(safeContent).replace(/\\n/g, '<br>');
+
             messageDiv.innerHTML = \`
                 <div class="message-avatar">\${avatar}</div>
                 <div class="message-content">\${formattedContent}</div>
