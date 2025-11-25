@@ -1,6 +1,7 @@
 import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
+import * as bcrypt from "bcryptjs";
 
 // Utility: Generate random code
 function generateCode(length: number = 40): string {
@@ -276,24 +277,28 @@ export class OAuthAuthorizePost extends OpenAPIRoute {
 				return c.json({ error: "Invalid credentials" }, 401);
 			}
 
-			// 2. Verify password (assumes bcrypt - replace with your hash method)
-			// For production: const isValid = await bcrypt.compare(password, user.password_hash);
-			// For now: basic check (REPLACE THIS WITH REAL PASSWORD VERIFICATION)
-			const isValid = password === user.password_hash; // TEMPORARY - USE BCRYPT IN PRODUCTION
+			// 2. Verify password using bcrypt
+			const passwordMatch = await bcrypt.compare(password, user.password_hash as string);
 
-			if (!isValid) {
+			if (!passwordMatch) {
 				return c.json({ error: "Invalid credentials" }, 401);
 			}
 
-			// 3. Check if user has any thermostat permissions
-			const permissions = await c.env.DB.prepare(
-				`SELECT COUNT(*) as count FROM user_thermostat_permissions WHERE user_id = ?`
-			).bind(user.id).first();
+			// 3. Check if user has thermostat permissions
+			// Admins and Sub-admins automatically have access to ALL thermostats
+			const isAdminOrSubAdmin = user.role === 'admin' || user.role === 'sub_admin';
 
-			if (!permissions || permissions.count === 0) {
-				return c.json({
-					error: "No thermostat access. Please contact your administrator to grant access."
-				}, 403);
+			if (!isAdminOrSubAdmin) {
+				// For regular tenants, verify they have at least one thermostat assigned
+				const permissions = await c.env.DB.prepare(
+					`SELECT COUNT(*) as count FROM user_thermostat_permissions WHERE user_id = ?`
+				).bind(user.id).first();
+
+				if (!permissions || permissions.count === 0) {
+					return c.json({
+						error: "No thermostat access. Please contact your administrator to grant access."
+					}, 403);
+				}
 			}
 
 			// 4. Generate authorization code (expires in 5 minutes)

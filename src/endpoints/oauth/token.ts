@@ -101,17 +101,37 @@ export class OAuthToken extends OpenAPIRoute {
 				// Delete used authorization code (one-time use)
 				await c.env.DB.prepare(`DELETE FROM oauth_codes WHERE code = ?`).bind(code).run();
 
-				// Get user's thermostat permissions
-				const thermostats = await c.env.DB.prepare(`
-					SELECT td.id, td.device_name, td.room_name, td.alexa_device_id
-					FROM user_thermostat_permissions utp
-					JOIN thermostat_devices td ON td.id = utp.thermostat_id
-					WHERE utp.user_id = ?
-				`).bind(authCode.user_id).all();
+				// Get user info including role
+				const user = await c.env.DB.prepare(`
+					SELECT id, email, role FROM users WHERE id = ?
+				`).bind(authCode.user_id).first();
+
+				if (!user) {
+					return c.json({ error: 'invalid_grant', error_description: 'User not found' }, 400);
+				}
+
+				// Get thermostats: ALL for admin/sub-admin, assigned only for tenants
+				let thermostats;
+				if (user.role === 'admin' || user.role === 'sub_admin') {
+					// Admins get ALL thermostats
+					thermostats = await c.env.DB.prepare(`
+						SELECT id, device_name, room_name, alexa_endpoint_id as alexa_device_id
+						FROM thermostat_devices
+					`).all();
+				} else {
+					// Tenants only get assigned thermostats
+					thermostats = await c.env.DB.prepare(`
+						SELECT td.id, td.device_name, td.room_name, td.alexa_endpoint_id as alexa_device_id
+						FROM user_thermostat_permissions utp
+						JOIN thermostat_devices td ON td.id = utp.thermostat_id
+						WHERE utp.user_id = ?
+					`).bind(authCode.user_id).all();
+				}
 
 				// Create access token payload
 				const tokenPayload = {
 					user_id: authCode.user_id,
+					role: user.role,
 					scope: authCode.scope,
 					thermostats: (thermostats.results || []).map((t: any) => ({
 						id: t.id,
@@ -178,17 +198,37 @@ export class OAuthToken extends OpenAPIRoute {
 					return c.json({ error: 'invalid_grant', error_description: 'Invalid refresh token' }, 400);
 				}
 
-				// Get user's current thermostat permissions
-				const thermostats = await c.env.DB.prepare(`
-					SELECT td.id, td.device_name, td.room_name, td.alexa_device_id
-					FROM user_thermostat_permissions utp
-					JOIN thermostat_devices td ON td.id = utp.thermostat_id
-					WHERE utp.user_id = ?
-				`).bind(tokenRecord.user_id).all();
+				// Get user info including role
+				const user = await c.env.DB.prepare(`
+					SELECT id, email, role FROM users WHERE id = ?
+				`).bind(tokenRecord.user_id).first();
+
+				if (!user) {
+					return c.json({ error: 'invalid_grant', error_description: 'User not found' }, 400);
+				}
+
+				// Get thermostats: ALL for admin/sub-admin, assigned only for tenants
+				let thermostats;
+				if (user.role === 'admin' || user.role === 'sub_admin') {
+					// Admins get ALL thermostats
+					thermostats = await c.env.DB.prepare(`
+						SELECT id, device_name, room_name, alexa_endpoint_id as alexa_device_id
+						FROM thermostat_devices
+					`).all();
+				} else {
+					// Tenants only get assigned thermostats
+					thermostats = await c.env.DB.prepare(`
+						SELECT td.id, td.device_name, td.room_name, td.alexa_endpoint_id as alexa_device_id
+						FROM user_thermostat_permissions utp
+						JOIN thermostat_devices td ON td.id = utp.thermostat_id
+						WHERE utp.user_id = ?
+					`).bind(tokenRecord.user_id).all();
+				}
 
 				// Create new access token payload
 				const tokenPayload = {
 					user_id: tokenRecord.user_id,
+					role: user.role,
 					scope: tokenRecord.scope,
 					thermostats: (thermostats.results || []).map((t: any) => ({
 						id: t.id,

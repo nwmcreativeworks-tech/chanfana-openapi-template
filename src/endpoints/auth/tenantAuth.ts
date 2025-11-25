@@ -1,9 +1,10 @@
 import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { Context } from "hono";
 import { z } from "zod";
+import * as bcrypt from "bcryptjs";
 
 /**
- * Tenant Login - Professional authentication
+ * Tenant Login - Professional authentication with bcrypt
  */
 export class TenantLogin extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
@@ -29,49 +30,55 @@ export class TenantLogin extends OpenAPIRoute {
 	};
 
 	async handle(c: Context) {
-		const data = await this.getValidatedData<typeof this.schema>();
-		const { email, password } = data.body as { email: string; password: string };
+		try {
+			const data = await this.getValidatedData<typeof this.schema>();
+			const { email, password } = data.body as { email: string; password: string };
 
-		// Get user from database
-		const user = await c.env.DB.prepare(
-			"SELECT * FROM users WHERE email = ? AND is_active = 1"
-		).bind(email).first();
+			// Get user from database
+			const user = await c.env.DB.prepare(
+				"SELECT * FROM users WHERE email = ? AND is_active = 1"
+			).bind(email).first();
 
-		if (!user) {
-			return c.json({ error: "Invalid credentials" }, 401);
+			if (!user) {
+				return c.json({ success: false, error: "Invalid credentials" }, 401);
+			}
+
+			// Verify password using bcrypt
+			const passwordMatch = await bcrypt.compare(password, user.password_hash as string);
+
+			if (!passwordMatch) {
+				return c.json({ success: false, error: "Invalid credentials" }, 401);
+			}
+
+			// Create session
+			const sessionToken = crypto.randomUUID();
+			const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+
+			await c.env.DB.prepare(
+				`INSERT INTO user_sessions (user_id, session_token, expires_at)
+				VALUES (?, ?, ?)`
+			).bind(user.id, sessionToken, expiresAt).run();
+
+			// Update last login
+			await c.env.DB.prepare(
+				"UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
+			).bind(user.id).run();
+
+			return c.json({
+				success: true,
+				session_token: sessionToken,
+				user: {
+					id: user.id,
+					email: user.email,
+					full_name: user.full_name,
+					unit_number: user.unit_number,
+					role: user.role,
+				},
+			});
+		} catch (error) {
+			console.error("Tenant login error:", error);
+			return c.json({ success: false, error: "Login failed" }, 500);
 		}
-
-		// In production, use proper password hashing (bcrypt, argon2)
-		// For now, simple comparison (REPLACE WITH PROPER HASHING!)
-		if (user.password_hash !== password) {
-			return c.json({ error: "Invalid credentials" }, 401);
-		}
-
-		// Create session
-		const sessionToken = crypto.randomUUID();
-		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
-
-		await c.env.DB.prepare(
-			`INSERT INTO user_sessions (user_id, session_token, expires_at)
-			VALUES (?, ?, ?)`
-		).bind(user.id, sessionToken, expiresAt).run();
-
-		// Update last login
-		await c.env.DB.prepare(
-			"UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
-		).bind(user.id).run();
-
-		return c.json({
-			success: true,
-			session_token: sessionToken,
-			user: {
-				id: user.id,
-				email: user.email,
-				full_name: user.full_name,
-				unit_number: user.unit_number,
-				role: user.role,
-			},
-		});
 	}
 }
 
