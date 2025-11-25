@@ -22,6 +22,28 @@ import {
 	CreateTenantPermission,
 	DeleteTenantPermission,
 } from "./endpoints/admin/roomManagement";
+import {
+	GetThermostatsApi,
+	CreateThermostatApi,
+	UpdateThermostatApi,
+	UpdateThermostatPermissionsApi,
+	ThermostatCommandApi,
+} from "./endpoints/admin/thermostatsApi";
+import {
+	GetAdminMessagesApi,
+	SendMessageApi,
+} from "./endpoints/admin/messagesApi";
+import {
+	GetServicePhotosApi,
+} from "./endpoints/admin/servicePhotosApi";
+import {
+	GetTenantMessagesApi,
+	MarkMessageReadApi,
+} from "./endpoints/tenant/messagesApi";
+import {
+	UploadServicePhotosApi,
+	GetTenantServicePhotosApi,
+} from "./endpoints/tenant/servicePhotosApi";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { cors } from "hono/cors";
@@ -130,6 +152,28 @@ openapi.patch("/admin/thermostats/:id/unassign", UnassignThermostatFromRoom);
 openapi.get("/admin/permissions", GetTenantPermissions);
 openapi.post("/admin/permissions", CreateTenantPermission);
 openapi.delete("/admin/permissions/:id", DeleteTenantPermission);
+
+// Admin Thermostats API (full CRUD + permissions + control)
+openapi.get("/admin/api/thermostats", GetThermostatsApi);
+openapi.post("/admin/api/thermostats", CreateThermostatApi);
+openapi.put("/admin/api/thermostats/:id", UpdateThermostatApi);
+openapi.put("/admin/api/thermostats/:id/permissions", UpdateThermostatPermissionsApi);
+openapi.post("/admin/api/thermostats/:id/command", ThermostatCommandApi);
+
+// Admin Messages API
+openapi.get("/admin/api/messages", GetAdminMessagesApi);
+openapi.post("/admin/api/messages", SendMessageApi);
+
+// Admin Service Photos API
+openapi.get("/admin/api/service-photos", GetServicePhotosApi);
+
+// Tenant Messages API
+openapi.get("/tenant/api/messages", GetTenantMessagesApi);
+openapi.post("/tenant/api/messages/:id/read", MarkMessageReadApi);
+
+// Tenant Service Photos API
+openapi.post("/tenant/api/service-photos", UploadServicePhotosApi);
+openapi.get("/tenant/api/service-photos", GetTenantServicePhotosApi);
 
 // Privacy Policy page
 app.get("/privacy", (c) => {
