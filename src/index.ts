@@ -47,6 +47,10 @@ import {
 import { TenantPortal } from "./endpoints/tenant/portal";
 import { TenantMessagesPage } from "./endpoints/tenant/messagesPage";
 import { TenantPhotosPage } from "./endpoints/tenant/photosPage";
+import { OAuthAuthorizeGet, OAuthAuthorizePost } from "./endpoints/oauth/authorize";
+import { OAuthToken } from "./endpoints/oauth/token";
+import { validateOAuthToken } from "./endpoints/oauth/middleware";
+import { AlexaDiscoverDevices, AlexaControlThermostat, AlexaThermostatStatus } from "./endpoints/oauth/alexaControl";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { cors } from "hono/cors";
@@ -177,6 +181,21 @@ openapi.post("/tenant/api/messages/:id/read", MarkMessageReadApi);
 // Tenant Service Photos API
 openapi.post("/tenant/api/service-photos", UploadServicePhotosApi);
 openapi.get("/tenant/api/service-photos", GetTenantServicePhotosApi);
+
+// OAuth Endpoints (Alexa Account Linking)
+openapi.get("/oauth/authorize", OAuthAuthorizeGet);
+openapi.post("/oauth/authorize", OAuthAuthorizePost);
+openapi.post("/oauth/token", OAuthToken);
+
+// Alexa OAuth-Protected Endpoints (require Bearer token)
+app.use("/alexa/discover-devices", validateOAuthToken);
+openapi.get("/alexa/discover-devices", AlexaDiscoverDevices);
+
+app.use("/alexa/control-thermostat", validateOAuthToken);
+openapi.post("/alexa/control-thermostat", AlexaControlThermostat);
+
+app.use("/alexa/thermostat-status", validateOAuthToken);
+openapi.get("/alexa/thermostat-status", AlexaThermostatStatus);
 
 // Tenant Portal Pages
 openapi.get("/portal", TenantPortal);
