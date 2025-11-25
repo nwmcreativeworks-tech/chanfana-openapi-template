@@ -171,10 +171,17 @@ export class AdminDashboard extends OpenAPIRoute {
 			letter-spacing: 0.2px;
 		}
 		.badge-admin { background: #0052CC; color: white; }
+		.badge-sub_admin { background: #0065FF; color: white; }
 		.badge-tenant { background: #00B8D9; color: white; }
 		.badge-maintenance { background: #FFAB00; color: #0B1F2A; }
 		.badge-active { background: #36B37E; color: white; }
 		.badge-inactive { background: #DFE1E6; color: #586069; }
+		.badge-notice { background: #0052CC; color: white; }
+		.badge-violation { background: #DE350B; color: white; }
+		.badge-announcement { background: #00B8D9; color: white; }
+		.badge-before { background: #FFAB00; color: #0B1F2A; }
+		.badge-after { background: #36B37E; color: white; }
+		.badge-unspecified { background: #DFE1E6; color: #586069; }
 		.btn {
 			padding: 10px 18px;
 			border: none;
@@ -202,6 +209,22 @@ export class AdminDashboard extends OpenAPIRoute {
 		.btn-danger:hover {
 			transform: translateY(-2px);
 			box-shadow: 0 6px 20px rgba(222, 53, 11, 0.3);
+		}
+		.btn-small {
+			padding: 6px 12px;
+			background: #0052CC;
+			color: white;
+			border: none;
+			border-radius: 6px;
+			font-size: 12px;
+			font-weight: 600;
+			cursor: pointer;
+			margin-right: 4px;
+			transition: all 0.2s;
+		}
+		.btn-small:hover {
+			background: #0065FF;
+			transform: translateY(-1px);
 		}
 		.tabs {
 			display: flex;
@@ -329,20 +352,6 @@ export class AdminDashboard extends OpenAPIRoute {
 			height: 100%;
 			object-fit: cover;
 		}
-		.photo-btn-small {
-			padding: 6px 12px;
-			background: #0052CC;
-			color: white;
-			border: none;
-			border-radius: 6px;
-			font-size: 12px;
-			font-weight: 600;
-			cursor: pointer;
-			transition: all 0.2s;
-		}
-		.photo-btn-small:hover {
-			background: #0065FF;
-		}
 		.photo-gallery {
 			display: flex;
 			gap: 12px;
@@ -399,9 +408,9 @@ export class AdminDashboard extends OpenAPIRoute {
 
 		<div class="tabs">
 			<div class="tab active" onclick="switchTab('users')">Users</div>
-			<div class="tab" onclick="switchTab('rooms')">Rooms</div>
 			<div class="tab" onclick="switchTab('thermostats')">Thermostats</div>
-			<div class="tab" onclick="switchTab('permissions')">Tenant Permissions</div>
+			<div class="tab" onclick="switchTab('messages')">Messages</div>
+			<div class="tab" onclick="switchTab('servicePhotos')">Service Photos</div>
 			<div class="tab" onclick="switchTab('chatActivity')">Chatbot Activity</div>
 			<div class="tab" onclick="switchTab('activity')">Activity Log</div>
 			<div class="tab" onclick="switchTab('maintenance')">Maintenance</div>
@@ -506,34 +515,16 @@ export class AdminDashboard extends OpenAPIRoute {
 			</div>
 		</div>
 
-		<div id="rooms-tab" class="tab-content">
-			<div class="card">
-				<h2>🏠 Room Management <button class="btn btn-primary" onclick="showAddRoomModal()">+ Add Room</button></h2>
-				<table id="roomsTable">
-					<thead>
-						<tr>
-							<th>Room Name</th>
-							<th>Description</th>
-							<th>Created</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
-		</div>
-
 		<div id="thermostats-tab" class="tab-content">
 			<div class="card">
-				<h2>🌡️ Thermostat Management <button class="btn btn-primary" onclick="syncAlexaDevices()">🔄 Sync from Alexa</button></h2>
+				<h2>🌡️ Thermostat Management <button class="btn btn-primary" onclick="showAddThermostatModal()">+ Add Thermostat</button></h2>
 				<table id="thermostatsTable">
 					<thead>
 						<tr>
 							<th>Device Name</th>
-							<th>Alexa Device ID</th>
-							<th>Assigned Room</th>
+							<th>Room Name</th>
+							<th>Assigned Users</th>
 							<th>Status</th>
-							<th>Last Sync</th>
 							<th>Actions</th>
 						</tr>
 					</thead>
@@ -542,18 +533,47 @@ export class AdminDashboard extends OpenAPIRoute {
 			</div>
 		</div>
 
-		<div id="permissions-tab" class="tab-content">
+		<div id="messages-tab" class="tab-content">
 			<div class="card">
-				<h2>🔐 Tenant Room Permissions <button class="btn btn-primary" onclick="showAddPermissionModal()">+ Grant Permission</button></h2>
-				<table id="permissionsTable">
+				<h2>📧 Message Center <button class="btn btn-primary" onclick="showSendMessageModal()">+ Send Message</button></h2>
+				<table id="messagesTable">
 					<thead>
 						<tr>
-							<th>Tenant Name</th>
-							<th>Email</th>
-							<th>Room</th>
-							<th>Can Control Temp</th>
-							<th>Created</th>
-							<th>Actions</th>
+							<th>Date</th>
+							<th>To</th>
+							<th>Subject</th>
+							<th>Type</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+
+		<div id="servicePhotos-tab" class="tab-content">
+			<div class="card">
+				<h2>📸 Service Photos</h2>
+				<div style="margin-bottom: 20px; display: flex; gap: 12px;">
+					<select id="photoUserFilter" onchange="loadServicePhotos()">
+						<option value="">All Users</option>
+					</select>
+					<select id="photoPhaseFilter" onchange="loadServicePhotos()">
+						<option value="">All Phases</option>
+						<option value="before">Before</option>
+						<option value="after">After</option>
+						<option value="unspecified">Unspecified</option>
+					</select>
+				</div>
+				<table id="servicePhotosTable">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>User</th>
+							<th>Unit</th>
+							<th>Phase</th>
+							<th>Request</th>
+							<th>Photo</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -597,7 +617,7 @@ export class AdminDashboard extends OpenAPIRoute {
 					<label>Role</label>
 					<select name="role" id="userRole">
 						<option value="tenant">Tenant</option>
-						<option value="maintenance">Maintenance</option>
+						<option value="sub_admin">Sub Admin</option>
 						<option value="admin">Admin</option>
 					</select>
 				</div>
@@ -652,50 +672,96 @@ export class AdminDashboard extends OpenAPIRoute {
 		</div>
 	</div>
 
-	<div class="modal" id="addRoomModal">
+	<div class="modal" id="addThermostatModal">
 		<div class="modal-content">
-			<h2>Add New Room</h2>
-			<form id="addRoomForm">
+			<h2 id="thermostatModalTitle">Add Thermostat</h2>
+			<form id="addThermostatForm">
+				<input type="hidden" name="id" id="thermostatId">
+				<div class="form-group">
+					<label>Device Name</label>
+					<input type="text" name="device_name" id="thermostatDeviceName" required placeholder="e.g., Sanctuary Thermostat">
+				</div>
 				<div class="form-group">
 					<label>Room Name</label>
-					<input type="text" name="room_name" required placeholder="e.g., Sanctuary">
+					<input type="text" name="room_name" id="thermostatRoomName" required placeholder="e.g., Sanctuary">
 				</div>
 				<div class="form-group">
-					<label>Description</label>
-					<input type="text" name="description" placeholder="e.g., Main worship area">
+					<label>Alexa Device ID</label>
+					<input type="text" name="alexa_device_id" id="thermostatAlexaId" required placeholder="e.g., amzn1.alexa-device-id...">
 				</div>
-				<button type="submit" class="btn btn-primary">Add Room</button>
-				<button type="button" class="btn" onclick="closeRoomModal()">Cancel</button>
+				<button type="submit" class="btn btn-primary">Save Thermostat</button>
+				<button type="button" class="btn" onclick="closeThermostatModal()">Cancel</button>
 			</form>
 		</div>
 	</div>
 
-	<div class="modal" id="addPermissionModal">
+	<div class="modal" id="editThermostatPermissionsModal">
 		<div class="modal-content">
-			<h2>Grant Room Permission</h2>
-			<form id="addPermissionForm">
-				<div class="form-group">
-					<label>Tenant Name</label>
-					<input type="text" name="tenant_name" required placeholder="e.g., John Doe">
+			<h2>Manage User Access</h2>
+			<p id="thermostatPermissionName" style="color: #586069; margin-bottom: 16px;"></p>
+			<input type="hidden" id="thermostatPermissionId">
+			<div class="form-group">
+				<label>Assign Users</label>
+				<div id="userCheckboxList" style="max-height: 300px; overflow-y: auto; border: 2px solid #E1E4E8; border-radius: 8px; padding: 12px;">
 				</div>
+			</div>
+			<button class="btn btn-primary" onclick="saveThermostatPermissions()">Save Permissions</button>
+			<button class="btn" onclick="closeThermostatPermissionsModal()">Cancel</button>
+		</div>
+	</div>
+
+	<div class="modal" id="sendMessageModal">
+		<div class="modal-content">
+			<h2>Send Message to Tenant</h2>
+			<form id="sendMessageForm">
 				<div class="form-group">
-					<label>Tenant Email</label>
-					<input type="email" name="tenant_email" required placeholder="e.g., john@example.com">
-				</div>
-				<div class="form-group">
-					<label>Room</label>
-					<select name="room_id" id="permissionRoomSelect" required>
-						<option value="">Select Room</option>
+					<label>Recipient</label>
+					<select name="userId" id="messageRecipient" required>
+						<option value="">Select Tenant</option>
 					</select>
 				</div>
 				<div class="form-group">
-					<label>
-						<input type="checkbox" name="can_control_temp" checked> Allow Temperature Control
-					</label>
+					<label>Message Type</label>
+					<select name="messageType" required>
+						<option value="notice">Notice</option>
+						<option value="violation">Violation</option>
+						<option value="announcement">Announcement</option>
+					</select>
 				</div>
-				<button type="submit" class="btn btn-primary">Grant Permission</button>
-				<button type="button" class="btn" onclick="closePermissionModal()">Cancel</button>
+				<div class="form-group">
+					<label>Subject</label>
+					<input type="text" name="subject" placeholder="Optional subject">
+				</div>
+				<div class="form-group">
+					<label>Message</label>
+					<textarea name="body" required rows="6" style="width: 100%; padding: 12px 16px; border: 2px solid #E1E4E8; border-radius: 8px; font-size: 15px; font-family: inherit;"></textarea>
+				</div>
+				<button type="submit" class="btn btn-primary">Send Message</button>
+				<button type="button" class="btn" onclick="closeMessageModal()">Cancel</button>
 			</form>
+		</div>
+	</div>
+
+	<div class="modal" id="thermostatControlModal">
+		<div class="modal-content">
+			<h2>Control Thermostat</h2>
+			<p id="controlThermostatName" style="color: #586069; margin-bottom: 16px;"></p>
+			<input type="hidden" id="controlThermostatId">
+			<div class="form-group">
+				<label>Mode</label>
+				<select id="controlMode">
+					<option value="heat">Heat</option>
+					<option value="cool">Cool</option>
+					<option value="auto">Auto</option>
+					<option value="off">Off</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Target Temperature (°F)</label>
+				<input type="number" id="controlTemp" min="60" max="80" value="72">
+			</div>
+			<button class="btn btn-primary" onclick="sendThermostatCommand()">Send Command</button>
+			<button class="btn" onclick="closeThermostatControlModal()">Cancel</button>
 		</div>
 	</div>
 
@@ -704,9 +770,9 @@ export class AdminDashboard extends OpenAPIRoute {
 		async function loadDashboard() {
 			await Promise.all([
 				loadUsers(),
-				loadRooms(),
 				loadThermostats(),
-				loadPermissions(),
+				loadMessages(),
+				loadServicePhotos(),
 				loadChatActivity(),
 				loadActivity(),
 				loadMaintenance(),
@@ -788,7 +854,7 @@ export class AdminDashboard extends OpenAPIRoute {
 					<td>\${req.category}</td>
 					<td>\${req.description.substring(0, 50)}...</td>
 					<td>
-						\${req.photos ? \`<button class="photo-btn-small" onclick='viewRequestPhotos(\${JSON.stringify(req.photos).replace(/'/g, "&apos;")})'>📷 View (\${typeof req.photos === 'string' ? JSON.parse(req.photos || "[]").length : (Array.isArray(req.photos) ? req.photos.length : 0)})</button>\` : '-'}
+						\${req.photos ? \`<button class="btn-small" onclick='viewRequestPhotos(\${JSON.stringify(req.photos).replace(/'/g, "&apos;")})'>📷 View (\${typeof req.photos === 'string' ? JSON.parse(req.photos || "[]").length : (Array.isArray(req.photos) ? req.photos.length : 0)})</button>\` : '-'}
 					</td>
 					<td>\${req.status}</td>
 					<td>\${new Date(req.created_at).toLocaleDateString()}</td>
@@ -1017,275 +1083,326 @@ export class AdminDashboard extends OpenAPIRoute {
 		}
 
 		// ============================================
-		// ROOMS MANAGEMENT
-		// ============================================
-
-		async function loadRooms() {
-			const response = await fetch('/admin/rooms');
-			const data = await response.json();
-
-			const tbody = document.querySelector('#roomsTable tbody');
-			tbody.innerHTML = '';
-
-			data.rooms.forEach(room => {
-				const row = document.createElement('tr');
-				row.innerHTML = \`
-					<td><strong>\${room.room_name}</strong></td>
-					<td>\${room.description || '-'}</td>
-					<td>\${new Date(room.created_at).toLocaleDateString()}</td>
-					<td>
-						<button class="btn-small" onclick="deleteRoom(\${room.id})">Delete</button>
-					</td>
-				\`;
-				tbody.appendChild(row);
-			});
-		}
-
-		function showAddRoomModal() {
-			document.getElementById('addRoomModal').classList.add('active');
-		}
-
-		function closeRoomModal() {
-			document.getElementById('addRoomModal').classList.remove('active');
-			document.getElementById('addRoomForm').reset();
-		}
-
-		async function deleteRoom(id) {
-			if (!confirm('Are you sure you want to delete this room? This will also remove thermostat assignments and tenant permissions.')) return;
-
-			const response = await fetch(\`/admin/rooms/\${id}\`, { method: 'DELETE' });
-			if (response.ok) {
-				loadRooms();
-				loadThermostats();
-				loadPermissions();
-			} else {
-				alert('Failed to delete room');
-			}
-		}
-
-		document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
-			e.preventDefault();
-			const formData = new FormData(e.target);
-			const data = Object.fromEntries(formData);
-
-			const response = await fetch('/admin/rooms', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(data)
-			});
-
-			if (response.ok) {
-				closeRoomModal();
-				loadRooms();
-				e.target.reset();
-			} else {
-				const error = await response.json();
-				alert(error.error || 'Failed to add room');
-			}
-		});
-
-		// ============================================
-		// THERMOSTATS MANAGEMENT
+		// THERMOSTATS MANAGEMENT (NEW API)
 		// ============================================
 
 		async function loadThermostats() {
-			const response = await fetch('/admin/thermostats');
+			const response = await fetch('/admin/api/thermostats');
 			const data = await response.json();
 
 			const tbody = document.querySelector('#thermostatsTable tbody');
 			tbody.innerHTML = '';
 
-			if (data.thermostats.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No thermostats found. Click "Sync from Alexa" to import devices.</td></tr>';
+			if (!data.success || data.thermostats.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No thermostats configured yet.</td></tr>';
 				return;
 			}
 
 			data.thermostats.forEach(thermo => {
 				const row = document.createElement('tr');
 				const statusIcon = thermo.is_active ? '✅' : '❌';
-				const lastSync = thermo.last_sync ? new Date(thermo.last_sync).toLocaleString() : 'Never';
+				const assignedUsers = thermo.assigned_users || [];
+				const userCount = assignedUsers.length;
 
 				row.innerHTML = \`
 					<td><strong>\${thermo.device_name}</strong></td>
-					<td><code>\${thermo.alexa_device_id.substring(0, 20)}...</code></td>
+					<td>\${thermo.room_name || '-'}</td>
 					<td>
-						<select onchange="assignThermostatToRoom(\${thermo.id}, this.value)" style="width: 100%; padding: 4px;">
-							<option value="">Unassigned</option>
-						</select>
+						<span style="color: #586069;">\${userCount} user\${userCount !== 1 ? 's' : ''}</span>
+						\${assignedUsers.slice(0, 2).map(u => \`<br><small>\${u.full_name}</small>\`).join('')}
+						\${userCount > 2 ? \`<br><small>+\${userCount - 2} more</small>\` : ''}
 					</td>
 					<td>\${statusIcon} \${thermo.is_active ? 'Active' : 'Inactive'}</td>
-					<td>\${lastSync}</td>
 					<td>
-						<button class="btn-small" onclick="unassignThermostat(\${thermo.id})">Unassign</button>
+						<button class="btn-small" onclick="editThermostat(\${thermo.id})">Edit</button>
+						<button class="btn-small" onclick="editThermostatPermissions(\${thermo.id}, '\${thermo.device_name}')">👥 Users</button>
+						<button class="btn-small" onclick="showThermostatControl(\${thermo.id}, '\${thermo.device_name}')">🎛️ Control</button>
+						<button class="btn-small" onclick="deleteThermostat(\${thermo.id})">Delete</button>
 					</td>
 				\`;
-
-				// Populate room dropdown
-				fetch('/admin/rooms').then(r => r.json()).then(roomData => {
-					const select = row.querySelector('select');
-					roomData.rooms.forEach(room => {
-						const option = document.createElement('option');
-						option.value = room.id;
-						option.textContent = room.room_name;
-						if (thermo.assigned_room_id === room.id) {
-							option.selected = true;
-						}
-						select.appendChild(option);
-					});
-				});
 
 				tbody.appendChild(row);
 			});
 		}
 
-		async function syncAlexaDevices() {
-			if (!confirm('This will fetch all thermostat devices from your Alexa account. Continue?')) return;
+		function showAddThermostatModal() {
+			document.getElementById('thermostatModalTitle').textContent = 'Add Thermostat';
+			document.getElementById('addThermostatForm').reset();
+			document.getElementById('thermostatId').value = '';
+			document.getElementById('addThermostatModal').classList.add('active');
+		}
 
-			const btn = event.target;
-			btn.disabled = true;
-			btn.textContent = '⏳ Syncing...';
+		function closeThermostatModal() {
+			document.getElementById('addThermostatModal').classList.remove('active');
+		}
 
-			try {
-				const response = await fetch('/alexa/sync-devices');
-				const data = await response.json();
+		async function editThermostat(id) {
+			const response = await fetch('/admin/api/thermostats');
+			const data = await response.json();
+			const thermostat = data.thermostats.find(t => t.id === id);
 
-				if (data.success) {
-					alert(\`Successfully synced \${data.devices_synced} thermostat(s)\`);
-					loadThermostats();
-				} else {
-					alert(\`Sync failed: \${data.error}\`);
-				}
-			} catch (error) {
-				alert('Sync failed: ' + error.message);
-			} finally {
-				btn.disabled = false;
-				btn.textContent = '🔄 Sync from Alexa';
+			if (thermostat) {
+				document.getElementById('thermostatModalTitle').textContent = 'Edit Thermostat';
+				document.getElementById('thermostatId').value = thermostat.id;
+				document.getElementById('thermostatDeviceName').value = thermostat.device_name;
+				document.getElementById('thermostatRoomName').value = thermostat.room_name || '';
+				document.getElementById('thermostatAlexaId').value = thermostat.alexa_device_id || '';
+				document.getElementById('addThermostatModal').classList.add('active');
 			}
 		}
 
-		async function assignThermostatToRoom(thermostatId, roomId) {
-			if (!roomId) return;
+		async function deleteThermostat(id) {
+			if (!confirm('Are you sure you want to delete this thermostat?')) return;
 
-			const response = await fetch(\`/admin/thermostats/\${thermostatId}\`, {
-				method: 'PATCH',
+			const response = await fetch(\`/admin/api/thermostats/\${id}\`, { method: 'DELETE' });
+			if (response.ok) {
+				loadThermostats();
+			} else {
+				alert('Failed to delete thermostat');
+			}
+		}
+
+		document.getElementById('addThermostatForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const formData = new FormData(e.target);
+			const data = Object.fromEntries(formData);
+			const id = data.id;
+			delete data.id;
+
+			const method = id ? 'PUT' : 'POST';
+			const url = id ? \`/admin/api/thermostats/\${id}\` : '/admin/api/thermostats';
+
+			const response = await fetch(url, {
+				method: method,
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ room_id: parseInt(roomId) })
+				body: JSON.stringify(data)
 			});
 
 			if (response.ok) {
-				alert('Thermostat assigned successfully');
+				closeThermostatModal();
 				loadThermostats();
 			} else {
-				alert('Failed to assign thermostat');
+				alert('Failed to save thermostat');
+			}
+		});
+
+		async function editThermostatPermissions(thermostatId, deviceName) {
+			document.getElementById('thermostatPermissionId').value = thermostatId;
+			document.getElementById('thermostatPermissionName').textContent = \`Device: \${deviceName}\`;
+
+			// Load users and current permissions
+			const [usersResponse, thermostatsResponse] = await Promise.all([
+				fetch('/admin/users'),
+				fetch('/admin/api/thermostats')
+			]);
+
+			const usersData = await usersResponse.json();
+			const thermostatsData = await thermostatsResponse.json();
+
+			const thermostat = thermostatsData.thermostats.find(t => t.id === thermostatId);
+			const assignedUserIds = (thermostat.assigned_users || []).map(u => u.id);
+
+			const checkboxList = document.getElementById('userCheckboxList');
+			checkboxList.innerHTML = '';
+
+			usersData.users.forEach(user => {
+				const isChecked = assignedUserIds.includes(user.id);
+				const div = document.createElement('div');
+				div.style.padding = '8px';
+				div.innerHTML = \`
+					<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+						<input type="checkbox" value="\${user.id}" \${isChecked ? 'checked' : ''}>
+						<span>\${user.full_name} (\${user.email}) - <span class="badge badge-\${user.role}">\${user.role}</span></span>
+					</label>
+				\`;
+				checkboxList.appendChild(div);
+			});
+
+			document.getElementById('editThermostatPermissionsModal').classList.add('active');
+		}
+
+		function closeThermostatPermissionsModal() {
+			document.getElementById('editThermostatPermissionsModal').classList.remove('active');
+		}
+
+		async function saveThermostatPermissions() {
+			const thermostatId = document.getElementById('thermostatPermissionId').value;
+			const checkboxes = document.querySelectorAll('#userCheckboxList input[type="checkbox"]:checked');
+			const userIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+			const response = await fetch(\`/admin/api/thermostats/\${thermostatId}/permissions\`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ userIds })
+			});
+
+			if (response.ok) {
+				closeThermostatPermissionsModal();
+				loadThermostats();
+			} else {
+				alert('Failed to update permissions');
 			}
 		}
 
-		async function unassignThermostat(thermostatId) {
-			const response = await fetch(\`/admin/thermostats/\${thermostatId}/unassign\`, {
-				method: 'PATCH'
+		function showThermostatControl(thermostatId, deviceName) {
+			document.getElementById('controlThermostatId').value = thermostatId;
+			document.getElementById('controlThermostatName').textContent = \`Device: \${deviceName}\`;
+			document.getElementById('thermostatControlModal').classList.add('active');
+		}
+
+		function closeThermostatControlModal() {
+			document.getElementById('thermostatControlModal').classList.remove('active');
+		}
+
+		async function sendThermostatCommand() {
+			const thermostatId = document.getElementById('controlThermostatId').value;
+			const mode = document.getElementById('controlMode').value;
+			const targetTemperatureF = parseInt(document.getElementById('controlTemp').value);
+
+			const response = await fetch(\`/admin/api/thermostats/\${thermostatId}/command\`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ mode, targetTemperatureF })
 			});
 
-			if (response.ok) {
-				alert('Thermostat unassigned');
-				loadThermostats();
+			const result = await response.json();
+
+			if (result.success) {
+				alert(result.message);
+				closeThermostatControlModal();
 			} else {
-				alert('Failed to unassign thermostat');
+				alert('Failed to send command: ' + (result.error || 'Unknown error'));
 			}
 		}
 
 		// ============================================
-		// TENANT PERMISSIONS MANAGEMENT
+		// MESSAGES MANAGEMENT
 		// ============================================
 
-		async function loadPermissions() {
-			const response = await fetch('/admin/permissions');
+		async function loadMessages() {
+			const response = await fetch('/admin/api/messages');
 			const data = await response.json();
 
-			const tbody = document.querySelector('#permissionsTable tbody');
+			const tbody = document.querySelector('#messagesTable tbody');
 			tbody.innerHTML = '';
 
-			if (data.permissions.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No permissions granted yet.</td></tr>';
+			if (!data.success || data.messages.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No messages sent yet.</td></tr>';
 				return;
 			}
 
-			data.permissions.forEach(perm => {
+			data.messages.forEach(msg => {
 				const row = document.createElement('tr');
-				const canControl = perm.can_control_temp ? '✅ Yes' : '❌ No';
+				const readStatus = msg.is_read ? '✅ Read' : '📬 Unread';
 
 				row.innerHTML = \`
-					<td><strong>\${perm.tenant_name}</strong></td>
-					<td>\${perm.tenant_email}</td>
-					<td>\${perm.room_name}</td>
-					<td>\${canControl}</td>
-					<td>\${new Date(perm.created_at).toLocaleDateString()}</td>
-					<td>
-						<button class="btn-small" onclick="deletePermission(\${perm.id})">Revoke</button>
-					</td>
+					<td>\${new Date(msg.created_at).toLocaleDateString()}</td>
+					<td>\${msg.tenant_name} (\${msg.tenant_email})</td>
+					<td>\${msg.subject || '(No Subject)'}</td>
+					<td><span class="badge badge-\${msg.message_type}">\${msg.message_type}</span></td>
+					<td>\${readStatus}</td>
 				\`;
 				tbody.appendChild(row);
 			});
 		}
 
-		async function showAddPermissionModal() {
-			// Load rooms into dropdown
-			const response = await fetch('/admin/rooms');
+		async function showSendMessageModal() {
+			// Load users into dropdown
+			const response = await fetch('/admin/users');
 			const data = await response.json();
 
-			const select = document.getElementById('permissionRoomSelect');
-			select.innerHTML = '<option value="">Select Room</option>';
+			const select = document.getElementById('messageRecipient');
+			select.innerHTML = '<option value="">Select Tenant</option>';
 
-			data.rooms.forEach(room => {
+			data.users.filter(u => u.role === 'tenant').forEach(user => {
 				const option = document.createElement('option');
-				option.value = room.id;
-				option.textContent = room.room_name;
+				option.value = user.id;
+				option.textContent = \`\${user.full_name} (\${user.email})\`;
 				select.appendChild(option);
 			});
 
-			document.getElementById('addPermissionModal').classList.add('active');
+			document.getElementById('sendMessageModal').classList.add('active');
 		}
 
-		function closePermissionModal() {
-			document.getElementById('addPermissionModal').classList.remove('active');
-			document.getElementById('addPermissionForm').reset();
+		function closeMessageModal() {
+			document.getElementById('sendMessageModal').classList.remove('active');
+			document.getElementById('sendMessageForm').reset();
 		}
 
-		async function deletePermission(id) {
-			if (!confirm('Are you sure you want to revoke this permission?')) return;
-
-			const response = await fetch(\`/admin/permissions/\${id}\`, { method: 'DELETE' });
-			if (response.ok) {
-				loadPermissions();
-			} else {
-				alert('Failed to delete permission');
-			}
-		}
-
-		document.getElementById('addPermissionForm').addEventListener('submit', async (e) => {
+		document.getElementById('sendMessageForm').addEventListener('submit', async (e) => {
 			e.preventDefault();
 			const formData = new FormData(e.target);
 			const data = {
-				tenant_name: formData.get('tenant_name'),
-				tenant_email: formData.get('tenant_email'),
-				room_id: parseInt(formData.get('room_id')),
-				can_control_temp: formData.get('can_control_temp') === 'on'
+				userId: parseInt(formData.get('userId')),
+				subject: formData.get('subject'),
+				body: formData.get('body'),
+				messageType: formData.get('messageType')
 			};
 
-			const response = await fetch('/admin/permissions', {
+			const response = await fetch('/admin/api/messages', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
 			});
 
 			if (response.ok) {
-				closePermissionModal();
-				loadPermissions();
-				e.target.reset();
+				closeMessageModal();
+				loadMessages();
+				alert('Message sent successfully');
 			} else {
-				const error = await response.json();
-				alert(error.error || 'Failed to grant permission');
+				alert('Failed to send message');
 			}
 		});
+
+		// ============================================
+		// SERVICE PHOTOS MANAGEMENT
+		// ============================================
+
+		async function loadServicePhotos() {
+			const userId = document.getElementById('photoUserFilter').value;
+			const phase = document.getElementById('photoPhaseFilter').value;
+
+			let url = '/admin/api/service-photos?';
+			if (userId) url += \`userId=\${userId}&\`;
+			if (phase) url += \`phase=\${phase}&\`;
+
+			const response = await fetch(url);
+			const data = await response.json();
+
+			// Populate user filter if empty
+			if (!document.getElementById('photoUserFilter').innerHTML.includes('option')) {
+				const usersResponse = await fetch('/admin/users');
+				const usersData = await usersResponse.json();
+				const userSelect = document.getElementById('photoUserFilter');
+				usersData.users.forEach(user => {
+					const option = document.createElement('option');
+					option.value = user.id;
+					option.textContent = \`\${user.full_name} (\${user.unit_number || 'No Unit'})\`;
+					userSelect.appendChild(option);
+				});
+			}
+
+			const tbody = document.querySelector('#servicePhotosTable tbody');
+			tbody.innerHTML = '';
+
+			if (!data.success || data.photos.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No photos found.</td></tr>';
+				return;
+			}
+
+			data.photos.forEach(photo => {
+				const row = document.createElement('tr');
+				row.innerHTML = \`
+					<td>\${new Date(photo.uploaded_at).toLocaleDateString()}</td>
+					<td>\${photo.user_name}</td>
+					<td>\${photo.unit_number || '-'}</td>
+					<td><span class="badge badge-\${photo.phase}">\${photo.phase}</span></td>
+					<td>\${photo.request_category ? \`#\${photo.maintenance_request_id} - \${photo.request_category}\` : 'General'}</td>
+					<td><img src="\${photo.photo_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="window.open('\${photo.photo_url}', '_blank')"></td>
+				\`;
+				tbody.appendChild(row);
+			});
+		}
 
 		// Load data on page load
 		loadDashboard();
