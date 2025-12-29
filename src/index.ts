@@ -6,6 +6,7 @@ import maintenanceRouter from "./endpoints/maintenance/router";
 import thermostatRouter from "./endpoints/thermostat/router";
 import authRouter from "./endpoints/auth/router";
 import adminRouter from "./endpoints/admin/router";
+import troubleshootingRouter from "./endpoints/troubleshooting/router";
 import { AlexaSkillHandler } from "./endpoints/alexa/alexaSkill";
 import { AlexaOAuth } from "./endpoints/alexa/oauth";
 import { AlexaSmartHomeSkillHandler } from "./endpoints/alexa/smartHomeSkill";
@@ -189,6 +190,7 @@ try {
 openapi.route("/chat", chatRouter);
 openapi.route("/maintenance", maintenanceRouter);
 openapi.route("/thermostat", thermostatRouter);
+openapi.route("/troubleshooting", troubleshootingRouter);
 
 // Register Authentication and Admin routers
 openapi.route("/auth", authRouter);

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ChatRequest, ChatResponse } from "./base";
 import { MaintenanceWorkflow } from "./maintenanceWorkflow";
 import { BuildingInfoWorkflow } from "./buildingInfoWorkflow";
+import { MediaTroubleshootingWorkflow } from "./mediaTroubleshooting";
 
 export class ChatMessage extends OpenAPIRoute {
 	schema: OpenAPIRouteSchema = {
@@ -172,10 +173,21 @@ You can also type CANCEL at any time to stop.`;
 
 			// Handle special actions
 			if (intent.action === "vmix_support") {
-				// Handle vMix/media support with knowledge base
-				const kbResult = await this.handleVmixSupport(c, message, systemPrompt, history);
-				responseText = kbResult.message;
-				actionTaken = { type: "vmix_support", details: kbResult };
+				// Handle media/AV troubleshooting with new workflow
+				const mediaWorkflow = new MediaTroubleshootingWorkflow();
+				const result = await mediaWorkflow.handleTroubleshooting(
+					c,
+					sessionId,
+					conversation.id,
+					message,
+					tenant_name
+				);
+				responseText = mediaWorkflow.formatResponse(result.message, result.guides);
+				actionTaken = {
+					type: "media_troubleshooting",
+					details: result,
+					guides: result.guides
+				};
 			} else if (intent.action === "room_temperature_control") {
 				// Handle room-based temperature control
 				actionTaken = await this.handleRoomTemperatureControl(c, message, tenant_name, tenant_email);
